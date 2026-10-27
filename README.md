@@ -77,6 +77,19 @@ com.adammg.ibridge/
 
 ---
 
+## Compatibility and Stability
+
+- **Tested Hardware**: This project has been tested exclusively using a Samsung Galaxy A15 and an iPhone X. Compatibility with other device models, Android versions, or iOS versions is not guaranteed.
+- **Project Status**: iBridge is experimental, under active development, and may occasionally throw errors, fail to connect, or exhibit unstable behavior.
+
+---
+
+## Acknowledgments
+
+This project was built and developed with the assistance of AI. 
+
+---
+
 ## License
 
 Original project materials are copyrighted © 2026 adammg-tech. All rights reserved.
