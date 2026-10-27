@@ -1,6 +1,6 @@
-# iBridge v2
+# iBridge
 
-iBridge v2 is an advanced Android application that enables direct USB connection, communication, file management, and diagnostics between Android devices and iOS devices (iPhones), operating entirely on-device without requiring a PC or root access.
+iBridge is an advanced Android application that enables direct USB connection, communication, file management, and diagnostics between Android devices and iOS devices (iPhones), operating entirely on-device without requiring a PC or root access.
 
 ---
 
@@ -29,7 +29,7 @@ iBridge v2 is an advanced Android application that enables direct USB connection
 
 ## How It Works
 
-iBridge v2 bridges Android USB Host APIs and iOS device protocols entirely on-device:
+iBridge bridges Android USB Host APIs and iOS device protocols entirely on-device:
 
 1. **USB File Descriptor Bridging**:
    - Detects USB connection via Android UsbManager and requests permission.
