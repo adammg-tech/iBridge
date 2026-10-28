@@ -13,16 +13,32 @@ android {
         applicationId = "com.adammg.ibridge"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            val storeFileProp = project.findProperty("MYAPP_RELEASE_STORE_FILE") as String?
+            if (!storeFileProp.isNullOrBlank()) {
+                storeFile = file(storeFileProp)
+                storePassword = project.findProperty("MYAPP_RELEASE_STORE_PASSWORD") as String?
+                keyAlias = project.findProperty("MYAPP_RELEASE_KEY_ALIAS") as String?
+                keyPassword = project.findProperty("MYAPP_RELEASE_KEY_PASSWORD") as String?
+            }
+        }
+    }
+
     buildTypes {
         release {
+            val storeFileProp = project.findProperty("MYAPP_RELEASE_STORE_FILE") as String?
+            if (!storeFileProp.isNullOrBlank()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             optimization {
-                enable = true
+                enable = false
                 packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
             }
         }

@@ -20,27 +20,45 @@ class AppRepository(context: Context) {
         val args = if (includeSystemApps) listOf("-l", "-o", "list_system") else listOf("-l")
         val result = engine.executeCommand("ideviceinstaller", args)
 
-        if (!result.isSuccess || result.stdout.isBlank()) return@withContext emptyList()
+        val output = if (result.isSuccess && result.stdout.isNotBlank()) {
+            result.stdout
+        } else {
+            // Fallback without extra args
+            val fallback = engine.executeCommand("ideviceinstaller", listOf("-l"))
+            if (fallback.isSuccess && fallback.stdout.isNotBlank()) fallback.stdout else return@withContext emptyList()
+        }
 
         val appsList = mutableListOf<IosApp>()
-        result.stdout.lines().forEach { line ->
-            val parts = line.split(" - ")
-            if (parts.size >= 2) {
-                val bundleId = parts[0].trim()
-                val nameAndVersion = parts[1].trim()
+        output.lines().forEach { line ->
+            val trimmed = line.trim()
+            if (trimmed.isNotBlank() && !trimmed.startsWith("Total") && !trimmed.startsWith("Listing") && !trimmed.startsWith("CFBundleIdentifier")) {
+                val parts = trimmed.split(Regex("\\s+-\\s+|\\s{2,}"))
+                if (parts.size >= 2) {
+                    val bundleId = parts[0].trim()
+                    val nameAndVersion = parts[1].trim()
 
-                val versionIndex = nameAndVersion.lastIndexOf(' ')
-                val appName = if (versionIndex > 0) nameAndVersion.substring(0, versionIndex) else nameAndVersion
-                val version = if (versionIndex > 0) nameAndVersion.substring(versionIndex + 1) else "1.0"
+                    val versionIndex = nameAndVersion.lastIndexOf(' ')
+                    val appName = if (versionIndex > 0) nameAndVersion.substring(0, versionIndex) else nameAndVersion
+                    val version = if (versionIndex > 0) nameAndVersion.substring(versionIndex + 1) else "1.0"
 
-                appsList.add(
-                    IosApp(
-                        appName = appName,
-                        bundleIdentifier = bundleId,
-                        version = version,
-                        isSystemApp = includeSystemApps
+                    appsList.add(
+                        IosApp(
+                            appName = appName,
+                            bundleIdentifier = bundleId,
+                            version = version,
+                            isSystemApp = includeSystemApps
+                        )
                     )
-                )
+                } else if (trimmed.contains('.')) {
+                    appsList.add(
+                        IosApp(
+                            appName = trimmed.substringAfterLast('.'),
+                            bundleIdentifier = trimmed,
+                            version = "1.0",
+                            isSystemApp = includeSystemApps
+                        )
+                    )
+                }
             }
         }
         appsList

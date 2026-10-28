@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Image
@@ -62,6 +63,16 @@ fun PhotosScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val statusMessage by viewModel.statusMessage.collectAsState()
     val selectedPhoto by viewModel.selectedPhoto.collectAsState()
+    val hasMorePhotos by viewModel.hasMorePhotos.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    val uploadLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.uploadPhotoFromUri(context, uri)
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.loadPhotos()
@@ -91,8 +102,13 @@ fun PhotosScreen(
                     fontWeight = FontWeight.Bold
                 )
             }
-            IconButton(onClick = { viewModel.loadPhotos() }) {
-                Icon(imageVector = Icons.Default.Refresh, contentDescription = "Refresh")
+            Row {
+                IconButton(onClick = { uploadLauncher.launch("image/*") }) {
+                    Icon(imageVector = Icons.Default.Add, contentDescription = "Upload Photo")
+                }
+                IconButton(onClick = { viewModel.loadPhotos() }) {
+                    Icon(imageVector = Icons.Default.Refresh, contentDescription = "Refresh")
+                }
             }
         }
 
@@ -183,6 +199,20 @@ fun PhotosScreen(
                         }
                     }
                 }
+
+                if (hasMorePhotos) {
+                    item {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = { viewModel.loadMorePhotos() },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp)
+                        ) {
+                            Text("Load +100 Photos")
+                        }
+                    }
+                }
             }
         }
     }
@@ -211,7 +241,7 @@ fun PhotoGridCard(
         Box(modifier = Modifier.fillMaxSize()) {
             if (item.localThumbnailPath != null && File(item.localThumbnailPath).exists()) {
                 val bitmap = remember(item.localThumbnailPath) {
-                    loadRotatedBitmap(item.localThumbnailPath!!)
+                    loadCorrectlyOrientedBitmap(item.localThumbnailPath)
                 }
                 if (bitmap != null) {
                     Image(
@@ -306,7 +336,7 @@ fun PhotoDetailDialog(
                 ) {
                     if (photo.localThumbnailPath != null && File(photo.localThumbnailPath).exists()) {
                         val bitmap = remember(photo.localThumbnailPath) {
-                            BitmapFactory.decodeFile(photo.localThumbnailPath)
+                            loadCorrectlyOrientedBitmap(photo.localThumbnailPath)
                         }
                         if (bitmap != null) {
                             Image(
@@ -364,23 +394,34 @@ fun PhotoDetailDialog(
     }
 }
 
-private fun loadRotatedBitmap(filePath: String): android.graphics.Bitmap? {
+private val bitmapCache = object : android.util.LruCache<String, android.graphics.Bitmap>(40 * 1024 * 1024) {
+    override fun sizeOf(key: String, value: android.graphics.Bitmap): Int {
+        return value.byteCount
+    }
+}
+
+private fun loadCorrectlyOrientedBitmap(filePath: String): android.graphics.Bitmap? {
+    bitmapCache.get(filePath)?.let { return it }
     val bitmap = BitmapFactory.decodeFile(filePath) ?: return null
-    return try {
+    val rotated = try {
         val exif = android.media.ExifInterface(filePath)
         val orientation = exif.getAttributeInt(
             android.media.ExifInterface.TAG_ORIENTATION,
-            android.media.ExifInterface.ORIENTATION_NORMAL
+            android.media.ExifInterface.ORIENTATION_UNDEFINED
         )
         val matrix = android.graphics.Matrix()
         when (orientation) {
             android.media.ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
             android.media.ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
             android.media.ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+            android.media.ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
+            android.media.ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.postScale(1f, -1f)
             else -> return bitmap
         }
-        android.graphics.Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+        if (matrix.isIdentity) bitmap else android.graphics.Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     } catch (e: Exception) {
         bitmap
     }
+    bitmapCache.put(filePath, rotated)
+    return rotated
 }

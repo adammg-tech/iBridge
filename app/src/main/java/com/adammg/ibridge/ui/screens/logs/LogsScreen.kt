@@ -43,6 +43,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
+import com.adammg.ibridge.ui.components.LiveTerminalConsole
+
 @Composable
 fun LogsScreen(
     viewModel: LogsViewModel = viewModel()
@@ -69,7 +71,7 @@ fun LogsScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "iOS Logs & Diagnostics",
+                text = "Logs & Diagnostics",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -81,140 +83,153 @@ fun LogsScreen(
             SegmentedButton(
                 selected = selectedTab == 0,
                 onClick = { selectedTab = 0 },
-                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3)
             ) {
                 Text("Live Syslog")
             }
             SegmentedButton(
                 selected = selectedTab == 1,
                 onClick = { selectedTab = 1 },
-                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3)
             ) {
                 Text("Crash Reports")
+            }
+            SegmentedButton(
+                selected = selectedTab == 2,
+                onClick = { selectedTab = 2 },
+                shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3)
+            ) {
+                Text("Termux Log")
             }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        if (selectedTab == 0) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row {
-                    OutlinedButton(onClick = {
-                        if (isStreaming) viewModel.stopLogStreaming() else viewModel.startLogStreaming()
-                    }) {
-                        Icon(
-                            imageVector = if (isStreaming) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            contentDescription = null
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(if (isStreaming) "Pause" else "Start Stream")
-                    }
-                }
-
-                IconButton(onClick = { viewModel.clearLogs() }) {
-                    Icon(imageVector = Icons.Default.Clear, contentDescription = "Clear")
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = Color(0xFF1E1E1E),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                if (logs.isEmpty()) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = if (isStreaming) "Listening for iOS system logs..." else "Tap 'Start Stream' to view live console logs",
-                            color = Color.LightGray,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                } else {
-                    LazyColumn(modifier = Modifier.padding(12.dp)) {
-                        items(logs) { entry ->
-                            Text(
-                                text = "${entry.timestamp} [${entry.processName}]: ${entry.message}",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontFamily = FontFamily.Monospace,
-                                color = Color(0xFF00FF66),
-                                modifier = Modifier.padding(vertical = 2.dp)
+        when (selectedTab) {
+            0 -> {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row {
+                        OutlinedButton(onClick = {
+                            if (isStreaming) viewModel.stopLogStreaming() else viewModel.startLogStreaming()
+                        }) {
+                            Icon(
+                                imageVector = if (isStreaming) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                contentDescription = null
                             )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(if (isStreaming) "Pause" else "Start Stream")
                         }
                     }
-                }
-            }
-        } else {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Retrieved Crash Reports",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                IconButton(onClick = { viewModel.fetchCrashReports() }) {
-                    Icon(imageVector = Icons.Default.Refresh, contentDescription = "Refresh")
-                }
-            }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            if (crashReports.isEmpty()) {
-                ElevatedCard(
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(imageVector = Icons.Default.BugReport, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "No crash reports found on device",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                    IconButton(onClick = { viewModel.clearLogs() }) {
+                        Icon(imageVector = Icons.Default.Clear, contentDescription = "Clear")
                     }
                 }
-            } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color(0xFF1E1E1E),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(crashReports) { report ->
-                        ElevatedCard(
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth()
+                    if (logs.isEmpty()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = if (isStreaming) "Listening for iOS system logs..." else "Tap 'Start Stream' to view live console logs",
+                                color = Color.LightGray,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    } else {
+                        LazyColumn(modifier = Modifier.padding(12.dp)) {
+                            items(logs) { entry ->
                                 Text(
-                                    text = report.fileName,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "Date: ${report.dateCreated} • Size: ${report.sizeBytes} bytes",
+                                    text = "${entry.timestamp} [${entry.processName}]: ${entry.message}",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    fontFamily = FontFamily.Monospace,
+                                    color = Color(0xFF00FF66),
+                                    modifier = Modifier.padding(vertical = 2.dp)
                                 )
                             }
                         }
                     }
                 }
+            }
+            1 -> {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Retrieved Crash Reports",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(onClick = { viewModel.fetchCrashReports() }) {
+                        Icon(imageVector = Icons.Default.Refresh, contentDescription = "Refresh")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (crashReports.isEmpty()) {
+                    ElevatedCard(
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(imageVector = Icons.Default.BugReport, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "No crash reports found on device",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(crashReports) { report ->
+                            ElevatedCard(
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text(
+                                        text = report.fileName,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "Date: ${report.dateCreated} • Size: ${report.sizeBytes} bytes",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            2 -> {
+                LiveTerminalConsole(modifier = Modifier.fillMaxSize())
             }
         }
     }

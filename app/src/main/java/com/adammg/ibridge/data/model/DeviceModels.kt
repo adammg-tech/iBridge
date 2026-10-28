@@ -26,6 +26,9 @@ data class DeviceInfo(
     val bluetoothAddress: String = "",
     val activationState: String = "Unactivated",
     val timeZone: String = "",
+    val totalStorageBytes: Long = 0L,
+    val freeStorageBytes: Long = 0L,
+    val usedStorageBytes: Long = 0L,
     val rawProperties: Map<String, String> = emptyMap()
 )
 

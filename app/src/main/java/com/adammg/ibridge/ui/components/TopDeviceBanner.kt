@@ -1,8 +1,13 @@
 package com.adammg.ibridge.ui.components
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.BatteryFull
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.PhonelinkLock
 import androidx.compose.material.icons.filled.PhoneIphone
 import androidx.compose.material.icons.filled.Usb
@@ -33,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.adammg.ibridge.core.usb.UsbConnectionState
@@ -46,6 +53,8 @@ fun TopDeviceBanner(
     onPairClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+
     ElevatedCard(
         shape = RoundedCornerShape(24.dp),
         modifier = modifier
@@ -62,7 +71,17 @@ fun TopDeviceBanner(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .clickable(enabled = usbState is UsbConnectionState.Connected) {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            val deviceSummary = "Device: ${deviceInfo.deviceName}\nVersion: iOS ${deviceInfo.productVersion} (${deviceInfo.buildVersion})\nModel: ${deviceInfo.productType}\nUDID: ${deviceInfo.udid}\nSerial: ${deviceInfo.serialNumber}"
+                            val clip = ClipData.newPlainText("iOS Device Info", deviceSummary)
+                            clipboard.setPrimaryClip(clip)
+                            Toast.makeText(context, "Copied iOS device details to clipboard!", Toast.LENGTH_SHORT).show()
+                        }
+                ) {
                     Icon(
                         imageVector = Icons.Default.PhoneIphone,
                         contentDescription = "iOS Device",
@@ -71,17 +90,28 @@ fun TopDeviceBanner(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Text(
-                            text = when (usbState) {
-                                is UsbConnectionState.Connected -> if (deviceInfo.deviceName.isNotBlank()) deviceInfo.deviceName else "iPhone Connected"
-                                is UsbConnectionState.DeviceFound -> "Apple Device Detected"
-                                is UsbConnectionState.PermissionRequired -> "Awaiting USB Permission"
-                                is UsbConnectionState.Error -> "Connection Error"
-                                UsbConnectionState.NoDeviceConnected -> "No iOS Device Connected"
-                            },
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = when (usbState) {
+                                    is UsbConnectionState.Connected -> if (deviceInfo.deviceName.isNotBlank()) deviceInfo.deviceName else "iPhone Connected"
+                                    is UsbConnectionState.DeviceFound -> "Apple Device Detected"
+                                    is UsbConnectionState.PermissionRequired -> "Awaiting USB Permission"
+                                    is UsbConnectionState.Error -> "Connection Error"
+                                    UsbConnectionState.NoDeviceConnected -> "No iOS Device Connected"
+                                },
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            if (usbState is UsbConnectionState.Connected) {
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Icon(
+                                    imageVector = Icons.Default.ContentCopy,
+                                    contentDescription = "Copy Details",
+                                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
                         Text(
                             text = when (usbState) {
                                 is UsbConnectionState.Connected -> "iOS ${deviceInfo.productVersion} • ${deviceInfo.productType}"
@@ -100,19 +130,25 @@ fun TopDeviceBanner(
                             text = when (usbState) {
                                 is UsbConnectionState.Connected -> if (isPaired) "Trusted" else "Pair Needed"
                                 is UsbConnectionState.DeviceFound -> "Detected"
-                                else -> "Disconnected"
+                                else -> "○"
                             }
                         )
                     },
                     leadingIcon = {
                         Icon(
-                            imageVector = if (isPaired) Icons.Default.PhonelinkLock else Icons.Default.Usb,
+                            imageVector = when (usbState) {
+                                is UsbConnectionState.Connected -> if (isPaired) Icons.Default.PhonelinkLock else Icons.Default.Usb
+                                else -> Icons.Default.Usb
+                            },
                             contentDescription = null,
                             modifier = Modifier.size(16.dp)
                         )
                     },
                     colors = AssistChipDefaults.assistChipColors(
-                        containerColor = if (isPaired) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+                        containerColor = when (usbState) {
+                            is UsbConnectionState.Connected -> if (isPaired) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+                            else -> MaterialTheme.colorScheme.surfaceVariant
+                        }
                     )
                 )
             }

@@ -32,6 +32,13 @@ object IdeviceInfoMapper {
             bluetoothAddress = properties["BluetoothAddress"] ?: "",
             activationState = properties["ActivationState"] ?: "Activated",
             timeZone = properties["TimeZone"] ?: "",
+            totalStorageBytes = properties["TotalDiskCapacity"]?.toLongOrNull() ?: properties["TotalDataCapacity"]?.toLongOrNull() ?: 0L,
+            freeStorageBytes = properties["AmountDataAvailable"]?.toLongOrNull() ?: properties["AmountDiskFree"]?.toLongOrNull() ?: 0L,
+            usedStorageBytes = run {
+                val total = properties["TotalDiskCapacity"]?.toLongOrNull() ?: properties["TotalDataCapacity"]?.toLongOrNull() ?: 0L
+                val free = properties["AmountDataAvailable"]?.toLongOrNull() ?: properties["AmountDiskFree"]?.toLongOrNull() ?: 0L
+                if (total > free) total - free else 0L
+            },
             rawProperties = properties
         )
     }

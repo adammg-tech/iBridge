@@ -25,58 +25,59 @@ class PhotoRepository(private val context: Context) {
     }
 
     suspend fun getTimelineGroups(): List<PhotoTimelineGroup> = withContext(Dispatchers.IO) {
-        val dcimFoldersResult = engine.executeCommand("afcclient", listOf("ls", "/DCIM"))
-        if (!dcimFoldersResult.isSuccess || dcimFoldersResult.stdout.isBlank()) {
+        val dcimResult = engine.executeCommand("afcclient", listOf("ls", "/DCIM"))
+        if (!dcimResult.isSuccess || dcimResult.stdout.isBlank()) {
             return@withContext emptyList()
         }
 
-        val folders = dcimFoldersResult.stdout.lines().map { it.trim().removeSuffix("/") }
+        // Sort DCIM folders numerically descending (e.g. 123APPLE > 119APPLE > 100APPLE) so the largest/latest number comes first
+        val folders = dcimResult.stdout.lines().map { it.trim().removeSuffix("/") }
             .filter { it.isNotBlank() && it != "." && it != ".." }
-            .sortedDescending()
+            .sortedByDescending { folder ->
+                folder.filter { it.isDigit() }.toIntOrNull() ?: 0
+            }
 
+        // Load the newest/highest numbered DCIM folder first for instant loading
+        val latestFolder = folders.firstOrNull() ?: "100APPLE"
         val allItems = mutableListOf<PhotoItem>()
 
-        for (folder in folders) {
-            val folderPath = "/DCIM/$folder"
-            val filesResult = engine.executeCommand("afcclient", listOf("ls", folderPath))
+        val folderPath = "/DCIM/$latestFolder"
+        val filesResult = engine.executeCommand("afcclient", listOf("ls", folderPath))
 
-            if (filesResult.isSuccess && filesResult.stdout.isNotBlank()) {
-                filesResult.stdout.lines().forEach { line ->
-                    val fileName = line.trim().removeSuffix("/")
-                    if (fileName.isNotBlank() && fileName.contains(".")) {
-                        val ext = fileName.substringAfterLast(".").uppercase()
-                        val isPhoto = ext in listOf("JPG", "JPEG", "PNG", "HEIC", "AAE")
-                        val isVideo = ext in listOf("MOV", "MP4", "M4V")
+        if (filesResult.isSuccess && filesResult.stdout.isNotBlank()) {
+            filesResult.stdout.lines().forEach { line ->
+                val fileName = line.trim().removeSuffix("/")
+                if (fileName.isNotBlank() && fileName.contains(".")) {
+                    val ext = fileName.substringAfterLast(".").uppercase()
+                    val isPhoto = ext in listOf("JPG", "JPEG", "PNG", "HEIC", "AAE")
+                    val isVideo = ext in listOf("MOV", "MP4", "M4V")
 
-                        if (isPhoto || isVideo) {
-                            val remotePath = "$folderPath/$fileName"
-                            val cachedThumbnailFile = File(photosCacheDir, "${folder}_$fileName")
+                    if (isPhoto || isVideo) {
+                        val remotePath = "$folderPath/$fileName"
+                        val cachedThumbnailFile = File(photosCacheDir, "${latestFolder}_$fileName")
 
-                            allItems.add(
-                                PhotoItem(
-                                    fileName = fileName,
-                                    remotePath = remotePath,
-                                    extension = ext,
-                                    isVideo = isVideo,
-                                    localThumbnailPath = if (cachedThumbnailFile.exists()) cachedThumbnailFile.absolutePath else null,
-                                    folderName = folder,
-                                    sizeFormatted = if (isVideo) "Video ($ext)" else "Photo ($ext)",
-                                    monthYearGroup = "Album $folder"
-                                )
+                        allItems.add(
+                            PhotoItem(
+                                fileName = fileName,
+                                remotePath = remotePath,
+                                extension = ext,
+                                isVideo = isVideo,
+                                localThumbnailPath = if (cachedThumbnailFile.exists()) cachedThumbnailFile.absolutePath else null,
+                                folderName = latestFolder,
+                                sizeFormatted = if (isVideo) "Video ($ext)" else "Photo ($ext)",
+                                monthYearGroup = "Camera Roll $latestFolder"
                             )
-                        }
+                        )
                     }
                 }
             }
         }
 
-        // Sort globally from newest to oldest across all folders
-        val sortedItems = allItems.sortedWith(compareByDescending<PhotoItem> { it.folderName }.thenByDescending { it.fileName })
+        val sortedItems = allItems.sortedByDescending { it.fileName }
 
-        // Group into clean chronological sections
-        val groups = sortedItems.chunked(45).mapIndexed { index, chunk ->
+        val groups = sortedItems.chunked(45).map { chunk ->
             PhotoTimelineGroup(
-                monthYearTitle = "Photos Timeline Group ${index + 1} (${chunk.first().folderName})",
+                monthYearTitle = "Camera Roll $latestFolder (${chunk.size} items)",
                 photos = chunk
             )
         }
@@ -103,6 +104,23 @@ class PhotoRepository(private val context: Context) {
         val result = engine.executeCommand("afcclient", listOf("get", item.remotePath, targetFile.absolutePath))
         val isSuccess = result.isSuccess && targetFile.exists()
         val msg = if (isSuccess) "Saved ${item.fileName} to Downloads/iBridge/Photos!" else result.stderr
+        Pair(isSuccess, msg)
+    }
+
+    suspend fun uploadPhotoToIphone(localFile: File): Pair<Boolean, String> = withContext(Dispatchers.IO) {
+        val dcimResult = engine.executeCommand("afcclient", listOf("ls", "/DCIM"))
+        val targetFolder = if (dcimResult.isSuccess && dcimResult.stdout.isNotBlank()) {
+            dcimResult.stdout.lines().map { it.trim().removeSuffix("/") }
+                .filter { it.isNotBlank() && it != "." && it != ".." }
+                .maxByOrNull { folder -> folder.filter { it.isDigit() }.toIntOrNull() ?: 0 } ?: "100APPLE"
+        } else {
+            "100APPLE"
+        }
+
+        val remotePath = "/DCIM/$targetFolder/${localFile.name}"
+        val result = engine.executeCommand("afcclient", listOf("put", localFile.absolutePath, remotePath))
+        val isSuccess = result.isSuccess
+        val msg = if (isSuccess) "Successfully uploaded ${localFile.name} to /DCIM/$targetFolder/!" else (result.stderr.ifEmpty { result.stdout })
         Pair(isSuccess, msg)
     }
 }

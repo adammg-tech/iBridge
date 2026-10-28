@@ -1,5 +1,10 @@
 package com.adammg.ibridge.ui.screens.overview
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,11 +13,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DeveloperBoard
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PowerSettingsNew
@@ -25,6 +32,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -34,6 +42,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -109,6 +118,47 @@ fun OverviewScreen(
             }
         }
 
+        if (deviceInfo.totalStorageBytes > 0L) {
+            val totalGb = deviceInfo.totalStorageBytes.toDouble() / (1024.0 * 1024.0 * 1024.0)
+            val usedGb = deviceInfo.usedStorageBytes.toDouble() / (1024.0 * 1024.0 * 1024.0)
+            val freeGb = deviceInfo.freeStorageBytes.toDouble() / (1024.0 * 1024.0 * 1024.0)
+            val percentUsed = if (totalGb > 0) (usedGb / totalGb).toFloat() else 0f
+
+            ElevatedCard(
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Storage & Capacity",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    InfoRow("Total Storage", String.format(java.util.Locale.getDefault(), "%.1f GB", totalGb))
+                    InfoRow("Used Storage", String.format(java.util.Locale.getDefault(), "%.1f GB", usedGb))
+                    InfoRow("Free Available", String.format(java.util.Locale.getDefault(), "%.1f GB", freeGb))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LinearProgressIndicator(
+                        progress = { percentUsed.coerceIn(0f, 1f) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                }
+            }
+        }
+
         Card(
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
@@ -133,40 +183,6 @@ fun OverviewScreen(
                 InfoRow("CPU Architecture", deviceInfo.cpuArchitecture)
                 InfoRow("Wi-Fi MAC Address", deviceInfo.wifiAddress)
                 InfoRow("Bluetooth MAC Address", deviceInfo.bluetoothAddress)
-            }
-        }
-
-        ElevatedCard(
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.DeveloperBoard,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.tertiary
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Embedded Binary Environment",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                InfoRow("Extracted Executables", "${viewModel.extractedBinariesCount} Binaries")
-                InfoRow("Extracted .so Libraries", "${viewModel.extractedLibrariesCount} Libraries (.so)")
-                InfoRow("Dynamic Linker", viewModel.linkerPath)
-                InfoRow("usbmuxd Socket Path", viewModel.socketPath)
-                InfoRow("Executables Path", viewModel.binariesPath)
-                InfoRow("Libraries Path", viewModel.librariesPath)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Binaries: ${viewModel.extractedBinariesList.joinToString(", ")}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
 
@@ -211,21 +227,51 @@ fun OverviewScreen(
 
 @Composable
 fun InfoRow(label: String, value: String) {
+    val context = LocalContext.current
+    val displayValue = value.ifEmpty { "N/A" }
+    val renderedValue = if (label == "UDID" && displayValue.length > 16) {
+        displayValue.take(8) + "..." + displayValue.takeLast(6)
+    } else {
+        displayValue
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+            .clickable(enabled = displayValue != "N/A") {
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val clip = ClipData.newPlainText(label, displayValue)
+                clipboard.setPrimaryClip(clip)
+                Toast.makeText(context, "Copied $label to clipboard", Toast.LENGTH_SHORT).show()
+            }
+            .padding(vertical = 6.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
         )
-        Text(
-            text = value.ifEmpty { "N/A" },
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.SemiBold
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End
+        ) {
+            Text(
+                text = renderedValue,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold
+            )
+            if (displayValue != "N/A") {
+                Spacer(modifier = Modifier.width(6.dp))
+                Icon(
+                    imageVector = Icons.Default.ContentCopy,
+                    contentDescription = "Copy $label",
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                    modifier = Modifier.size(14.dp)
+                )
+            }
+        }
     }
 }

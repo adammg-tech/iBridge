@@ -49,10 +49,12 @@ class DeviceRepository(context: Context) {
     suspend fun getDeviceInfo(): DeviceInfo = withContext(Dispatchers.IO) {
         val rootResult = engine.executeCommand("ideviceinfo")
         val batteryResult = engine.executeCommand("ideviceinfo", listOf("-q", "com.apple.mobile.battery"))
+        val diskResult = engine.executeCommand("ideviceinfo", listOf("-q", "com.apple.disk_usage"))
 
         val combinedOutput = buildString {
             if (rootResult.isSuccess) append(rootResult.stdout).append("\n")
-            if (batteryResult.isSuccess) append(batteryResult.stdout)
+            if (batteryResult.isSuccess) append(batteryResult.stdout).append("\n")
+            if (diskResult.isSuccess) append(diskResult.stdout)
         }
 
         if (combinedOutput.isNotBlank()) {
