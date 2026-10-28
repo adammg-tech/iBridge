@@ -1,3 +1,7 @@
+![iBridge Banner](Banner.png)
+
+# iBridge
+
 # iBridge
 
 iBridge is an advanced Android application that enables direct USB connection, communication, file management, and diagnostics between Android devices and iOS devices (iPhones), operating entirely on-device without requiring a PC or root access.
