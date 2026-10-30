@@ -17,58 +17,113 @@ class AppRepository(context: Context) {
     suspend fun listApps(includeSystemApps: Boolean = false): List<IosApp> = withContext(Dispatchers.IO) {
         if (!isInstallerAvailable()) return@withContext emptyList()
 
-        val args = if (includeSystemApps) listOf("-l", "-o", "list_system") else listOf("-l")
+        val args = if (includeSystemApps) listOf("list", "--system") else listOf("list", "--user")
         val result = engine.executeCommand("ideviceinstaller", args)
 
-        val output = if (result.isSuccess && result.stdout.isNotBlank()) {
-            result.stdout
-        } else {
-            // Fallback without extra args
-            val fallback = engine.executeCommand("ideviceinstaller", listOf("-l"))
-            if (fallback.isSuccess && fallback.stdout.isNotBlank()) fallback.stdout else return@withContext emptyList()
+        var output = result.stdout
+        if (output.isBlank() || !output.contains("CFBundleIdentifier")) {
+            val fallback = engine.executeCommand("ideviceinstaller", listOf("list", "--all"))
+            if (fallback.stdout.isNotBlank()) {
+                output = fallback.stdout
+            }
         }
 
+        if (output.isBlank()) return@withContext emptyList()
+
         val appsList = mutableListOf<IosApp>()
-        output.lines().forEach { line ->
+        val lines = output.lines()
+        val isCsv = lines.firstOrNull()?.contains("CFBundleIdentifier") == true
+
+        lines.forEachIndexed { index, line ->
             val trimmed = line.trim()
-            if (trimmed.isNotBlank() && !trimmed.startsWith("Total") && !trimmed.startsWith("Listing") && !trimmed.startsWith("CFBundleIdentifier")) {
-                val parts = trimmed.split(Regex("\\s+-\\s+|\\s{2,}"))
-                if (parts.size >= 2) {
-                    val bundleId = parts[0].trim()
-                    val nameAndVersion = parts[1].trim()
+            if (trimmed.isNotBlank()) {
+                if (isCsv && index == 0) return@forEachIndexed // skip header
 
-                    val versionIndex = nameAndVersion.lastIndexOf(' ')
-                    val appName = if (versionIndex > 0) nameAndVersion.substring(0, versionIndex) else nameAndVersion
-                    val version = if (versionIndex > 0) nameAndVersion.substring(versionIndex + 1) else "1.0"
+                if (isCsv || trimmed.contains(',')) {
+                    val parts = parseCsvLine(trimmed)
+                    if (parts.size >= 3) {
+                        val bundleId = parts[0].trim().removeSurrounding("\"")
+                        val version = parts[1].trim().removeSurrounding("\"")
+                        val appName = parts[2].trim().removeSurrounding("\"")
+                        if (bundleId.isNotBlank() && bundleId.contains('.')) {
+                            appsList.add(
+                                IosApp(
+                                    appName = appName.ifEmpty { bundleId.substringAfterLast('.') },
+                                    bundleIdentifier = bundleId,
+                                    version = version,
+                                    isSystemApp = includeSystemApps
+                                )
+                            )
+                        }
+                    } else if (parts.size >= 1 && parts[0].contains('.')) {
+                        val bundleId = parts[0].trim().removeSurrounding("\"")
+                        appsList.add(
+                            IosApp(
+                                appName = bundleId.substringAfterLast('.'),
+                                bundleIdentifier = bundleId,
+                                version = "1.0",
+                                isSystemApp = includeSystemApps
+                            )
+                        )
+                    }
+                } else {
+                    val parts = trimmed.split(Regex("\\s+-\\s+|\\s{2,}"))
+                    if (parts.size >= 2) {
+                        val bundleId = parts[0].trim()
+                        val nameAndVersion = parts[1].trim()
 
-                    appsList.add(
-                        IosApp(
-                            appName = appName,
-                            bundleIdentifier = bundleId,
-                            version = version,
-                            isSystemApp = includeSystemApps
+                        val versionIndex = nameAndVersion.lastIndexOf(' ')
+                        val appName = if (versionIndex > 0) nameAndVersion.substring(0, versionIndex) else nameAndVersion
+                        val version = if (versionIndex > 0) nameAndVersion.substring(versionIndex + 1) else "1.0"
+
+                        appsList.add(
+                            IosApp(
+                                appName = appName.trim().removeSurrounding("\""),
+                                bundleIdentifier = bundleId,
+                                version = version.trim().removeSurrounding("\""),
+                                isSystemApp = includeSystemApps
+                            )
                         )
-                    )
-                } else if (trimmed.contains('.')) {
-                    appsList.add(
-                        IosApp(
-                            appName = trimmed.substringAfterLast('.'),
-                            bundleIdentifier = trimmed,
-                            version = "1.0",
-                            isSystemApp = includeSystemApps
+                    } else if (trimmed.contains('.')) {
+                        appsList.add(
+                            IosApp(
+                                appName = trimmed.substringAfterLast('.'),
+                                bundleIdentifier = trimmed,
+                                version = "1.0",
+                                isSystemApp = includeSystemApps
+                            )
                         )
-                    )
+                    }
                 }
             }
         }
-        appsList
+        appsList.distinctBy { it.bundleIdentifier }
+    }
+
+    private fun parseCsvLine(line: String): List<String> {
+        val result = mutableListOf<String>()
+        val curVal = StringBuilder()
+        var inQuotes = false
+        for (i in line.indices) {
+            val c = line[i]
+            when {
+                c == '"' -> inQuotes = !inQuotes
+                c == ',' && !inQuotes -> {
+                    result.add(curVal.toString().trim())
+                    curVal.clear()
+                }
+                else -> curVal.append(c)
+            }
+        }
+        result.add(curVal.toString().trim())
+        return result
     }
 
     suspend fun installIpa(ipaPath: String): Pair<Boolean, String> = withContext(Dispatchers.IO) {
         if (!isInstallerAvailable()) return@withContext Pair(false, "ideviceinstaller binary not available")
 
-        val result = engine.executeCommand("ideviceinstaller", listOf("-i", ipaPath))
-        val isSuccess = result.isSuccess && result.stdout.contains("Complete", ignoreCase = true)
+        val result = engine.executeCommand("ideviceinstaller", listOf("install", ipaPath))
+        val isSuccess = result.isSuccess
         val message = if (isSuccess) "App installed successfully!" else (result.stderr.ifEmpty { result.stdout })
         Pair(isSuccess, message)
     }
@@ -76,8 +131,8 @@ class AppRepository(context: Context) {
     suspend fun uninstallApp(bundleId: String): Pair<Boolean, String> = withContext(Dispatchers.IO) {
         if (!isInstallerAvailable()) return@withContext Pair(false, "ideviceinstaller binary not available")
 
-        val result = engine.executeCommand("ideviceinstaller", listOf("-U", bundleId))
-        val isSuccess = result.isSuccess && result.stdout.contains("Complete", ignoreCase = true)
+        val result = engine.executeCommand("ideviceinstaller", listOf("uninstall", bundleId))
+        val isSuccess = result.isSuccess
         val message = if (isSuccess) "App uninstalled successfully!" else (result.stderr.ifEmpty { result.stdout })
         Pair(isSuccess, message)
     }

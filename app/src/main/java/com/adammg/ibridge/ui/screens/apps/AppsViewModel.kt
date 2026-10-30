@@ -13,6 +13,9 @@ import kotlinx.coroutines.launch
 class AppsViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = AppRepository(application)
+    private val collator = java.text.Collator.getInstance().apply {
+        strength = java.text.Collator.PRIMARY
+    }
 
     private val _appList = MutableStateFlow<List<IosApp>>(emptyList())
     val appList: StateFlow<List<IosApp>> = _appList.asStateFlow()
@@ -28,7 +31,8 @@ class AppsViewModel(application: Application) : AndroidViewModel(application) {
     fun loadApps(includeSystemApps: Boolean = false) {
         viewModelScope.launch {
             _isLoading.value = true
-            _appList.value = repository.listApps(includeSystemApps)
+            val apps = repository.listApps(includeSystemApps)
+            _appList.value = apps.sortedWith { a, b -> collator.compare(a.appName, b.appName) }
             _isLoading.value = false
         }
     }

@@ -4,9 +4,10 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.adammg.ibridge.data.model.PhotoItem
-import com.adammg.ibridge.data.model.PhotoTimelineGroup
 import com.adammg.ibridge.data.repository.PhotoRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,11 +17,17 @@ class PhotosViewModel(application: Application) : AndroidViewModel(application) 
 
     private val repository = PhotoRepository(application)
 
-    private var allMasterPhotos = listOf<PhotoItem>()
-    private var visibleCount = 100
+    private val _dcimFolders = MutableStateFlow<List<String>>(emptyList())
+    val dcimFolders: StateFlow<List<String>> = _dcimFolders.asStateFlow()
 
-    private val _photoGroups = MutableStateFlow<List<PhotoTimelineGroup>>(emptyList())
-    val photoGroups: StateFlow<List<PhotoTimelineGroup>> = _photoGroups.asStateFlow()
+    private val _selectedFolder = MutableStateFlow<String?>(null)
+    val selectedFolder: StateFlow<String?> = _selectedFolder.asStateFlow()
+
+    private var allFolderPhotos = listOf<PhotoItem>()
+    private var visibleCount = 50
+
+    private val _folderPhotos = MutableStateFlow<List<PhotoItem>>(emptyList())
+    val folderPhotos: StateFlow<List<PhotoItem>> = _folderPhotos.asStateFlow()
 
     private val _hasMorePhotos = MutableStateFlow(false)
     val hasMorePhotos: StateFlow<Boolean> = _hasMorePhotos.asStateFlow()
@@ -37,38 +44,41 @@ class PhotosViewModel(application: Application) : AndroidViewModel(application) 
     fun loadPhotos() {
         viewModelScope.launch {
             _isLoading.value = true
-            _statusMessage.value = "Scanning iPhone /DCIM/ photo library..."
-            val groups = repository.getTimelineGroups()
-            allMasterPhotos = groups.flatMap { it.photos }
-            visibleCount = 100
-
-            updateVisiblePhotos()
+            _statusMessage.value = "Scanning DCIM folders..."
+            val folders = repository.getDcimFolders()
+            _dcimFolders.value = folders
+            _selectedFolder.value = null
             _isLoading.value = false
+            _statusMessage.value = "Found ${folders.size} camera roll folders"
+        }
+    }
 
-            val totalCount = allMasterPhotos.size
-            _statusMessage.value = "Showing ${minOf(visibleCount, totalCount)} of $totalCount media items"
+    fun selectFolder(folderName: String?) {
+        _selectedFolder.value = folderName
+        if (folderName != null) {
+            viewModelScope.launch {
+                _isLoading.value = true
+                _statusMessage.value = "Loading $folderName..."
+                allFolderPhotos = repository.getPhotosForFolder(folderName)
+                visibleCount = 50
+                updateFolderPhotosSlice()
+                _isLoading.value = false
+                _statusMessage.value = "Loaded ${allFolderPhotos.size} items in $folderName"
+            }
         }
     }
 
     fun loadMorePhotos() {
-        visibleCount += 100
-        updateVisiblePhotos()
-        val totalCount = allMasterPhotos.size
-        _statusMessage.value = "Showing ${minOf(visibleCount, totalCount)} of $totalCount media items"
+        visibleCount += 50
+        updateFolderPhotosSlice()
     }
 
-    private fun updateVisiblePhotos() {
-        val sliced = allMasterPhotos.take(visibleCount)
-        val groups = sliced.chunked(45).mapIndexed { index, chunk ->
-            PhotoTimelineGroup(
-                monthYearTitle = "Photos Timeline Group ${index + 1} (${chunk.first().folderName})",
-                photos = chunk
-            )
-        }
-        _photoGroups.value = groups
-        _hasMorePhotos.value = visibleCount < allMasterPhotos.size
+    private fun updateFolderPhotosSlice() {
+        val sliced = allFolderPhotos.take(visibleCount)
+        _folderPhotos.value = sliced
+        _hasMorePhotos.value = visibleCount < allFolderPhotos.size
 
-        val missingThumbs = sliced.filter { it.localThumbnailPath == null && !it.isVideo }.take(30)
+        val missingThumbs = sliced.filter { it.localThumbnailPath == null }.take(50)
         if (missingThumbs.isNotEmpty()) {
             loadThumbnails(missingThumbs)
         }
@@ -76,55 +86,31 @@ class PhotosViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun loadThumbnails(items: List<PhotoItem>) {
         viewModelScope.launch(Dispatchers.IO) {
-            var updated = false
-            items.forEach { item ->
-                if (item.localThumbnailPath == null && !item.isVideo) {
-                    val localPath = repository.downloadThumbnail(item)
+            val missing = items.filter { it.localThumbnailPath == null }
+            if (missing.isEmpty()) return@launch
+
+            missing.chunked(8).forEach { batch ->
+                val deferredResults = batch.map { item ->
+                    async(Dispatchers.IO) {
+                        val localPath = repository.downloadThumbnail(item)
+                        Pair(item.remotePath, localPath)
+                    }
+                }
+                val results = deferredResults.awaitAll()
+
+                var batchUpdated = false
+                results.forEach { (remotePath, localPath) ->
                     if (localPath != null) {
-                        allMasterPhotos = allMasterPhotos.map {
-                            if (it.remotePath == item.remotePath) it.copy(localThumbnailPath = localPath) else it
+                        allFolderPhotos = allFolderPhotos.map {
+                            if (it.remotePath == remotePath) it.copy(localThumbnailPath = localPath) else it
                         }
-                        updated = true
-                    }
-                    kotlinx.coroutines.delay(100)
-                }
-            }
-            if (updated) {
-                val sliced = allMasterPhotos.take(visibleCount)
-                val groups = sliced.chunked(45).mapIndexed { index, chunk ->
-                    PhotoTimelineGroup(
-                        monthYearTitle = "Photos Timeline Group ${index + 1} (${chunk.first().folderName})",
-                        photos = chunk
-                    )
-                }
-                _photoGroups.value = groups
-            }
-        }
-    }
-
-    fun uploadPhotoFromUri(context: android.content.Context, uri: android.net.Uri) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _statusMessage.value = "Preparing photo for upload..."
-            try {
-                val inputStream = context.contentResolver.openInputStream(uri)
-                val tempFile = java.io.File(context.cacheDir, "upload_${System.currentTimeMillis()}.jpg")
-                inputStream?.use { input ->
-                    tempFile.outputStream().use { output ->
-                        input.copyTo(output)
+                        batchUpdated = true
                     }
                 }
 
-                _statusMessage.value = "Uploading photo to iPhone DCIM..."
-                val (success, msg) = repository.uploadPhotoToIphone(tempFile)
-                _statusMessage.value = msg
-                if (success) {
-                    loadPhotos()
+                if (batchUpdated) {
+                    _folderPhotos.value = allFolderPhotos.take(visibleCount)
                 }
-            } catch (e: Exception) {
-                _statusMessage.value = "Upload failed: ${e.message}"
-            } finally {
-                _isLoading.value = false
             }
         }
     }

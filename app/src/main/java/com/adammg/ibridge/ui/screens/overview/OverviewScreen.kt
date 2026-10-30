@@ -32,7 +32,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
+import com.adammg.ibridge.ui.components.WavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -42,20 +42,83 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
+import com.adammg.ibridge.core.usb.UsbConnectionState
+import com.adammg.ibridge.ui.components.TopDeviceBanner
+
 @Composable
 fun OverviewScreen(
+    isPaired: Boolean = false,
+    usbState: UsbConnectionState = UsbConnectionState.NoDeviceConnected,
+    onPairClick: () -> Unit = {},
     viewModel: OverviewViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val deviceInfo by viewModel.deviceInfo.collectAsState()
     val statusMessage by viewModel.statusMessage.collectAsState()
 
+    var showRenameDialog by remember { mutableStateOf(false) }
+    var newDeviceName by remember(deviceInfo.deviceName) { mutableStateOf(deviceInfo.deviceName) }
+
     LaunchedEffect(Unit) {
         viewModel.loadDeviceInfo()
+    }
+
+    LaunchedEffect(isPaired) {
+        if (isPaired) {
+            viewModel.loadDeviceInfo()
+        }
+    }
+
+    if (showRenameDialog) {
+        AlertDialog(
+            onDismissRequest = { showRenameDialog = false },
+            title = { Text("Rename iPhone") },
+            text = {
+                Column {
+                    Text(
+                        text = "Enter a new name for this iPhone:",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = newDeviceName,
+                        onValueChange = { newDeviceName = it },
+                        label = { Text("Device Name") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (newDeviceName.isNotBlank()) {
+                            viewModel.renameDevice(newDeviceName.trim())
+                        }
+                        showRenameDialog = false
+                    }
+                ) {
+                    Text("Rename")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRenameDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 
     Column(
@@ -65,6 +128,13 @@ fun OverviewScreen(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        TopDeviceBanner(
+            usbState = usbState,
+            deviceInfo = deviceInfo,
+            isPaired = isPaired,
+            onPairClick = onPairClick
+        )
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -75,7 +145,7 @@ fun OverviewScreen(
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
-            IconButton(onClick = { viewModel.loadDeviceInfo() }) {
+            IconButton(onClick = { viewModel.refreshOverview() }) {
                 Icon(imageVector = Icons.Default.Refresh, contentDescription = "Refresh")
             }
         }
@@ -108,7 +178,61 @@ fun OverviewScreen(
                     )
                 }
                 Spacer(modifier = Modifier.height(12.dp))
-                InfoRow("Device Name", deviceInfo.deviceName)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Device Name",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Text(
+                            text = deviceInfo.deviceName.ifEmpty { "N/A" },
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        IconButton(
+                            onClick = {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                val clip = ClipData.newPlainText("Device Name", deviceInfo.deviceName)
+                                clipboard.setPrimaryClip(clip)
+                                Toast.makeText(context, "Copied Device Name to clipboard", Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = "Copy Device Name",
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
+                        IconButton(
+                            onClick = {
+                                newDeviceName = deviceInfo.deviceName
+                                showRenameDialog = true
+                            },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Rename Device",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
                 InfoRow("Product Type", deviceInfo.productType)
                 InfoRow("iOS Version", "${deviceInfo.productVersion} (${deviceInfo.buildVersion})")
                 InfoRow("Serial Number", deviceInfo.serialNumber)
@@ -119,9 +243,10 @@ fun OverviewScreen(
         }
 
         if (deviceInfo.totalStorageBytes > 0L) {
-            val totalGb = deviceInfo.totalStorageBytes.toDouble() / (1024.0 * 1024.0 * 1024.0)
-            val usedGb = deviceInfo.usedStorageBytes.toDouble() / (1024.0 * 1024.0 * 1024.0)
-            val freeGb = deviceInfo.freeStorageBytes.toDouble() / (1024.0 * 1024.0 * 1024.0)
+            val divisor = 1000.0 * 1000.0 * 1000.0
+            val totalGb = deviceInfo.totalStorageBytes.toDouble() / divisor
+            val freeGb = deviceInfo.freeStorageBytes.toDouble() / divisor
+            val usedGb = deviceInfo.usedStorageBytes.toDouble() / divisor
             val percentUsed = if (totalGb > 0) (usedGb / totalGb).toFloat() else 0f
 
             ElevatedCard(
@@ -143,17 +268,14 @@ fun OverviewScreen(
                         )
                     }
                     Spacer(modifier = Modifier.height(12.dp))
-                    InfoRow("Total Storage", String.format(java.util.Locale.getDefault(), "%.1f GB", totalGb))
-                    InfoRow("Used Storage", String.format(java.util.Locale.getDefault(), "%.1f GB", usedGb))
-                    InfoRow("Free Available", String.format(java.util.Locale.getDefault(), "%.1f GB", freeGb))
+                    InfoRow("Total Storage", String.format(java.util.Locale.getDefault(), "%.2f GB", totalGb))
+                    InfoRow("Used Storage", String.format(java.util.Locale.getDefault(), "%.2f GB", usedGb))
+                    InfoRow("Free Available", String.format(java.util.Locale.getDefault(), "%.2f GB", freeGb))
                     Spacer(modifier = Modifier.height(8.dp))
-                    LinearProgressIndicator(
-                        progress = { percentUsed.coerceIn(0f, 1f) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp),
+                    WavyProgressIndicator(
+                        progress = percentUsed.coerceIn(0f, 1f),
                         color = MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }

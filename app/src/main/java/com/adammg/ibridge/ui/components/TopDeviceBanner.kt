@@ -31,7 +31,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
+import com.adammg.ibridge.ui.components.WavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -42,8 +42,41 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.runtime.remember
+import com.adammg.ibridge.R
 import com.adammg.ibridge.core.usb.UsbConnectionState
 import com.adammg.ibridge.data.model.DeviceInfo
+
+private fun getIosDrawableResId(majorVersion: Int): Int {
+    return when (majorVersion) {
+        1 -> R.drawable.ios1
+        2 -> R.drawable.ios2
+        3 -> R.drawable.ios3
+        4 -> R.drawable.ios4
+        5 -> R.drawable.ios5
+        6 -> R.drawable.ios6
+        7 -> R.drawable.ios7
+        8 -> R.drawable.ios8
+        9 -> R.drawable.ios9
+        10 -> R.drawable.ios10
+        11 -> R.drawable.ios11
+        12 -> R.drawable.ios12
+        13 -> R.drawable.ios13
+        14 -> R.drawable.ios14
+        15 -> R.drawable.ios15
+        16 -> R.drawable.ios16
+        17 -> R.drawable.ios17
+        18 -> R.drawable.ios18
+        26 -> R.drawable.ios26
+        27 -> R.drawable.ios27
+        else -> 0
+    }
+}
 
 @Composable
 fun TopDeviceBanner(
@@ -54,6 +87,34 @@ fun TopDeviceBanner(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+
+    val majorVersion = remember(deviceInfo.productVersion) {
+        deviceInfo.productVersion.split(".").firstOrNull()?.toIntOrNull() ?: 0
+    }
+
+    val iosDrawableId = remember(majorVersion) {
+        getIosDrawableResId(majorVersion)
+    }
+
+    val deviceDrawableId = remember(deviceInfo.productType) {
+        if (deviceInfo.productType.isNotBlank() && deviceInfo.productType != "Unknown") {
+            var cleanName = deviceInfo.productType.lowercase().trim().replace(",", "_")
+            cleanName = when (cleanName) {
+                "iphone10_4" -> "iphone10_1"
+                "iphone10_5" -> "iphone10_2"
+                "iphone10_6" -> "iphone10_3"
+                "iphone9_3" -> "iphone9_1"
+                "iphone9_4" -> "iphone9_2"
+                "iphone11_4" -> "iphone11_6"
+                "iphone5_4" -> "iphone5_3"
+                "iphone6_2" -> "iphone6_1"
+                "iphone19_7" -> "iphone19_3"
+                else -> cleanName
+            }
+            val resId = context.resources.getIdentifier(cleanName, "drawable", context.packageName)
+            if (resId != 0) resId else 0
+        } else 0
+    }
 
     ElevatedCard(
         shape = RoundedCornerShape(24.dp),
@@ -82,12 +143,33 @@ fun TopDeviceBanner(
                             Toast.makeText(context, "Copied iOS device details to clipboard!", Toast.LENGTH_SHORT).show()
                         }
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.PhoneIphone,
-                        contentDescription = "iOS Device",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(36.dp)
-                    )
+                    if (usbState is UsbConnectionState.Connected) {
+                        val displayDrawableId = if (deviceDrawableId != 0) deviceDrawableId else iosDrawableId
+                        if (displayDrawableId != 0) {
+                            Image(
+                                painter = painterResource(id = displayDrawableId),
+                                contentDescription = deviceInfo.marketingName,
+                                modifier = Modifier
+                                    .height(48.dp)
+                                    .widthIn(max = 64.dp),
+                                contentScale = ContentScale.Fit
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.PhoneIphone,
+                                contentDescription = "iOS Device",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(36.dp)
+                            )
+                        }
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.PhoneIphone,
+                            contentDescription = "iOS Device",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -114,7 +196,7 @@ fun TopDeviceBanner(
                         }
                         Text(
                             text = when (usbState) {
-                                is UsbConnectionState.Connected -> "iOS ${deviceInfo.productVersion} • ${deviceInfo.productType}"
+                                is UsbConnectionState.Connected -> deviceInfo.marketingName
                                 else -> "Connect via USB OTG cable"
                             },
                             style = MaterialTheme.typography.bodySmall,
@@ -243,13 +325,10 @@ fun TopDeviceBanner(
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
-                    LinearProgressIndicator(
-                        progress = { (deviceInfo.batteryCurrentCapacity / 100f).coerceIn(0f, 1f) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(6.dp),
-                        color = MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    WavyProgressIndicator(
+                        progress = (deviceInfo.batteryCurrentCapacity / 100f).coerceIn(0f, 1f),
+                        color = if (deviceInfo.batteryCurrentCapacity < 20) Color.Red else MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }

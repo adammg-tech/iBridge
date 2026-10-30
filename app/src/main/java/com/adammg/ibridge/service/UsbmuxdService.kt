@@ -240,6 +240,13 @@ class UsbmuxdService : Service() {
             .build()
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        Log.d(TAG, "Task removed (swiped away from Recents) -> Stopping usbmuxd and service")
+        stopUsbmuxdDaemon()
+        stopSelf()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         stopUsbmuxdDaemon()

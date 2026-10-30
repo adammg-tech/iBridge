@@ -86,6 +86,9 @@ class DeviceRepository(context: Context) {
             if (binaryManager.lockdownDir.exists()) {
                 binaryManager.lockdownDir.listFiles()?.forEach { it.delete() }
             }
+            if (binaryManager.fLockdownDir.exists()) {
+                binaryManager.fLockdownDir.listFiles()?.forEach { it.delete() }
+            }
             true
         } catch (e: Exception) {
             false
@@ -95,14 +98,18 @@ class DeviceRepository(context: Context) {
     fun hasLocalPairingCertificate(context: Context, udid: String? = null): Boolean {
         val binaryManager = com.adammg.ibridge.core.binary.BinaryManager(context)
         val lockdownDir = binaryManager.lockdownDir
-        if (!lockdownDir.exists()) return false
+        val fLockdownDir = binaryManager.fLockdownDir
 
-        val files = lockdownDir.listFiles() ?: return false
-        if (files.isEmpty()) return false
-
-        if (udid != null) {
-            return java.io.File(lockdownDir, "$udid.plist").exists()
+        fun checkDir(dir: java.io.File): Boolean {
+            if (!dir.exists()) return false
+            val files = dir.listFiles() ?: return false
+            if (files.isEmpty()) return false
+            if (udid != null) {
+                return java.io.File(dir, "$udid.plist").exists()
+            }
+            return files.any { it.name.endsWith(".plist") && it.length() > 0 }
         }
-        return files.any { it.name.endsWith(".plist") && it.length() > 0 }
+
+        return checkDir(lockdownDir) || checkDir(fLockdownDir)
     }
 }

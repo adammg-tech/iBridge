@@ -35,7 +35,6 @@ fun MainScreen(
     mainViewModel: MainViewModel = viewModel()
 ) {
     val usbState by mainViewModel.usbConnectionState.collectAsState()
-    val deviceInfo by mainViewModel.deviceInfo.collectAsState()
     val isPaired by mainViewModel.isPaired.collectAsState()
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
@@ -65,16 +64,13 @@ fun MainScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            TopDeviceBanner(
-                usbState = usbState,
-                deviceInfo = deviceInfo,
-                isPaired = isPaired,
-                onPairClick = { mainViewModel.pairDevice() }
-            )
-
             Box(modifier = Modifier.weight(1f)) {
                 when (selectedTabIndex) {
-                    0 -> OverviewScreen()
+                    0 -> OverviewScreen(
+                        isPaired = isPaired,
+                        usbState = usbState,
+                        onPairClick = { mainViewModel.pairDevice() }
+                    )
                     1 -> PhotosScreen()
                     2 -> ToolsHubScreen()
                 }

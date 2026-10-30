@@ -31,8 +31,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val statusMessage: StateFlow<String?> = _statusMessage.asStateFlow()
 
     init {
-        usbFdBridge.registerReceivers()
+        clearSessionPairingCertificates()
         observeUsbState()
+        usbFdBridge.registerReceivers()
+    }
+
+    private fun clearSessionPairingCertificates() {
+        viewModelScope.launch {
+            deviceRepository.forgetAllPairings(getApplication())
+        }
     }
 
     private fun observeUsbState() {
@@ -67,6 +74,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     }
                     else -> {
                         _isPaired.value = false
+                        clearSessionPairingCertificates()
                         stopUsbmuxdService()
                     }
                 }
@@ -137,6 +145,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     override fun onCleared() {
         super.onCleared()
+        clearSessionPairingCertificates()
         usbFdBridge.unregisterReceivers()
     }
 }

@@ -14,9 +14,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilterChip
@@ -25,6 +27,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,9 +50,19 @@ fun AppsScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val statusMessage by viewModel.statusMessage.collectAsState()
     var showSystemApps by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var showSearch by remember { mutableStateOf(false) }
 
     LaunchedEffect(showSystemApps) {
         viewModel.loadApps(showSystemApps)
+    }
+
+    val filteredApps = remember(appList, searchQuery) {
+        if (searchQuery.isBlank()) appList
+        else appList.filter {
+            it.appName.contains(searchQuery, ignoreCase = true) ||
+            it.bundleIdentifier.contains(searchQuery, ignoreCase = true)
+        }
     }
 
     Column(
@@ -68,10 +81,31 @@ fun AppsScreen(
                 fontWeight = FontWeight.Bold
             )
             Row {
+                IconButton(onClick = {
+                    showSearch = !showSearch
+                    if (!showSearch) searchQuery = ""
+                }) {
+                    Icon(
+                        imageVector = if (showSearch) Icons.Default.Close else Icons.Default.Search,
+                        contentDescription = "Search Apps"
+                    )
+                }
                 IconButton(onClick = { viewModel.loadApps(showSystemApps) }) {
                     Icon(imageVector = Icons.Default.Refresh, contentDescription = "Refresh")
                 }
             }
+        }
+
+        if (showSearch) {
+            Spacer(modifier = Modifier.height(4.dp))
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                label = { Text("Search apps by name or bundle ID...") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(4.dp))
         }
 
         if (!viewModel.isBinaryAvailable) {
@@ -134,7 +168,7 @@ fun AppsScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        if (appList.isEmpty() && !isLoading) {
+        if (filteredApps.isEmpty() && !isLoading) {
             Card(
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier
@@ -164,7 +198,7 @@ fun AppsScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
-                items(appList) { app ->
+                items(filteredApps) { app ->
                     ElevatedCard(
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth()

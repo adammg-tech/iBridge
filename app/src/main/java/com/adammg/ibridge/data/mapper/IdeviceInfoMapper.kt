@@ -16,6 +16,17 @@ object IdeviceInfoMapper {
             }
         }
 
+        val totalBytes = properties["TotalDiskCapacity"]?.toLongOrNull()
+            ?: properties["TotalDataCapacity"]?.toLongOrNull()
+            ?: 0L
+
+        val freeBytes = properties["AmountDataAvailable"]?.toLongOrNull()
+            ?: properties["TotalDataAvailable"]?.toLongOrNull()
+            ?: properties["AmountDiskFree"]?.toLongOrNull()
+            ?: 0L
+
+        val usedBytes = if (totalBytes > freeBytes) totalBytes - freeBytes else 0L
+
         return DeviceInfo(
             deviceName = properties["DeviceName"] ?: properties["MarketName"] ?: "iOS Device",
             productType = properties["ProductType"] ?: "Unknown",
@@ -32,13 +43,9 @@ object IdeviceInfoMapper {
             bluetoothAddress = properties["BluetoothAddress"] ?: "",
             activationState = properties["ActivationState"] ?: "Activated",
             timeZone = properties["TimeZone"] ?: "",
-            totalStorageBytes = properties["TotalDiskCapacity"]?.toLongOrNull() ?: properties["TotalDataCapacity"]?.toLongOrNull() ?: 0L,
-            freeStorageBytes = properties["AmountDataAvailable"]?.toLongOrNull() ?: properties["AmountDiskFree"]?.toLongOrNull() ?: 0L,
-            usedStorageBytes = run {
-                val total = properties["TotalDiskCapacity"]?.toLongOrNull() ?: properties["TotalDataCapacity"]?.toLongOrNull() ?: 0L
-                val free = properties["AmountDataAvailable"]?.toLongOrNull() ?: properties["AmountDiskFree"]?.toLongOrNull() ?: 0L
-                if (total > free) total - free else 0L
-            },
+            totalStorageBytes = totalBytes,
+            freeStorageBytes = freeBytes,
+            usedStorageBytes = usedBytes,
             rawProperties = properties
         )
     }
