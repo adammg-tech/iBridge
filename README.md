@@ -1,4 +1,4 @@
-![iBridge Banner]()
+![iBridge Banner](Banner.png)
 
 # iBridge
 
