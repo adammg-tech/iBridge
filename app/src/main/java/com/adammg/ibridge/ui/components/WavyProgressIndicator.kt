@@ -47,7 +47,7 @@ fun WavyProgressIndicator(
         val height = size.height
         val centerY = height / 2f
         val amplitude = height / 2.5f
-        val frequency = 4f * Math.PI.toFloat() / width
+        val frequency = 16f * Math.PI.toFloat() / width
 
         // Draw full background track line
         drawLine(

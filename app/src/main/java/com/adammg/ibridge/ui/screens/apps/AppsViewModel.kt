@@ -46,11 +46,13 @@ class AppsViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun uninstallApp(bundleId: String) {
+    fun uninstallApp(bundleId: String, appName: String) {
         viewModelScope.launch {
-            _statusMessage.value = "Uninstalling $bundleId..."
+            _statusMessage.value = "$appName Deleting..."
             val (success, message) = repository.uninstallApp(bundleId)
-            _statusMessage.value = message
+            _statusMessage.value = if (success) "$appName Deleted!" else "Failed: $message"
+            kotlinx.coroutines.delay(2000)
+            _statusMessage.value = null
             if (success) loadApps()
         }
     }

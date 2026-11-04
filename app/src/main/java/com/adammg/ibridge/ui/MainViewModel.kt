@@ -30,6 +30,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _statusMessage = MutableStateFlow<String?>(null)
     val statusMessage: StateFlow<String?> = _statusMessage.asStateFlow()
 
+    private val _themeMode = MutableStateFlow(com.adammg.ibridge.ui.theme.ThemeMode.SYSTEM)
+    val themeMode: StateFlow<com.adammg.ibridge.ui.theme.ThemeMode> = _themeMode.asStateFlow()
+
+    fun setThemeMode(mode: com.adammg.ibridge.ui.theme.ThemeMode) {
+        _themeMode.value = mode
+    }
+
     init {
         clearSessionPairingCertificates()
         observeUsbState()

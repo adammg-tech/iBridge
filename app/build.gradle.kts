@@ -17,6 +17,9 @@ android {
         versionName = "2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        ndk {
+            abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a"))
+        }
     }
 
     signingConfigs {
@@ -64,6 +67,8 @@ android {
 }
 
 dependencies {
+    implementation(files("libs/ffmpeg-kit-audio-2.2.3.aar"))
+    implementation("com.googlecode.plist:dd-plist:1.30")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)

@@ -19,8 +19,9 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { url = uri("https://jitpack.io") }
     }
 }
 
-rootProject.name = "iBridge v2"
+rootProject.name = "iBridge"
 include(":app")

@@ -69,6 +69,14 @@ class OverviewViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun sleepDevice() {
+        viewModelScope.launch {
+            _statusMessage.value = "Sending sleep command..."
+            val success = repository.sleepDevice()
+            _statusMessage.value = if (success) "Device going to sleep!" else "Failed to send sleep command"
+        }
+    }
+
     fun renameDevice(newName: String) {
         viewModelScope.launch {
             _statusMessage.value = "Renaming device to '$newName'..."

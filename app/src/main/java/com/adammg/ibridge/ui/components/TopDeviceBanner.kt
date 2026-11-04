@@ -22,11 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.BatteryFull
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.PhonelinkLock
 import androidx.compose.material.icons.filled.PhoneIphone
-import androidx.compose.material.icons.filled.Usb
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilledTonalButton
@@ -204,35 +200,6 @@ fun TopDeviceBanner(
                         )
                     }
                 }
-
-                AssistChip(
-                    onClick = { },
-                    label = {
-                        Text(
-                            text = when (usbState) {
-                                is UsbConnectionState.Connected -> if (isPaired) "Trusted" else "Pair Needed"
-                                is UsbConnectionState.DeviceFound -> "Detected"
-                                else -> "○"
-                            }
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = when (usbState) {
-                                is UsbConnectionState.Connected -> if (isPaired) Icons.Default.PhonelinkLock else Icons.Default.Usb
-                                else -> Icons.Default.Usb
-                            },
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    },
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = when (usbState) {
-                            is UsbConnectionState.Connected -> if (isPaired) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
-                            else -> MaterialTheme.colorScheme.surfaceVariant
-                        }
-                    )
-                )
             }
 
             AnimatedVisibility(

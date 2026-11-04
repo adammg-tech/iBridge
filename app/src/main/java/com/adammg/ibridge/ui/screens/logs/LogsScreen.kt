@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
@@ -85,21 +86,39 @@ fun LogsScreen(
                 onClick = { selectedTab = 0 },
                 shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3)
             ) {
-                Text("Live Syslog")
+                Text(
+                    text = "Live Syslog",
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
             SegmentedButton(
                 selected = selectedTab == 1,
                 onClick = { selectedTab = 1 },
                 shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3)
             ) {
-                Text("Crash Reports")
+                Text(
+                    text = "Crash Reports",
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
             SegmentedButton(
                 selected = selectedTab == 2,
                 onClick = { selectedTab = 2 },
                 shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3)
             ) {
-                Text("Termux Log")
+                Text(
+                    text = "Termux Log",
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
 
@@ -167,61 +186,64 @@ fun LogsScreen(
                 }
             }
             1 -> {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        text = "Retrieved Crash Reports",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    IconButton(onClick = { viewModel.fetchCrashReports() }) {
-                        Icon(imageVector = Icons.Default.Refresh, contentDescription = "Refresh")
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                if (crashReports.isEmpty()) {
-                    ElevatedCard(
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(
-                            modifier = Modifier.padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(imageVector = Icons.Default.BugReport, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "No crash reports found on device",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+                        Text(
+                            text = "Retrieved Crash Reports",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        IconButton(onClick = { viewModel.fetchCrashReports() }) {
+                            Icon(imageVector = Icons.Default.Refresh, contentDescription = "Refresh")
                         }
                     }
-                } else {
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        items(crashReports) { report ->
-                            ElevatedCard(
-                                shape = RoundedCornerShape(16.dp),
-                                modifier = Modifier.fillMaxWidth()
+
+                    if (crashReports.isEmpty()) {
+                        ElevatedCard(
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Text(
-                                        text = report.fileName,
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        text = "Date: ${report.dateCreated} • Size: ${report.sizeBytes} bytes",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                Icon(imageVector = Icons.Default.BugReport, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "No crash reports found on device",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    } else {
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            items(crashReports) { report ->
+                                ElevatedCard(
+                                    shape = RoundedCornerShape(16.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text(
+                                            text = report.fileName,
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = "Date: ${report.dateCreated} • Size: ${report.sizeBytes} bytes",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
                             }
                         }

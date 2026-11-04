@@ -10,7 +10,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.adammg.ibridge.ui.MainScreen
-import com.adammg.ibridge.ui.theme.IBridgeV2Theme
+import com.adammg.ibridge.ui.theme.IBridgeTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -24,7 +24,7 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            IBridgeV2Theme {
+            IBridgeTheme {
                 MainScreen()
             }
         }

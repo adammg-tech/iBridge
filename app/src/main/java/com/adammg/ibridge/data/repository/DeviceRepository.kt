@@ -50,11 +50,13 @@ class DeviceRepository(context: Context) {
         val rootResult = engine.executeCommand("ideviceinfo")
         val batteryResult = engine.executeCommand("ideviceinfo", listOf("-q", "com.apple.mobile.battery"))
         val diskResult = engine.executeCommand("ideviceinfo", listOf("-q", "com.apple.disk_usage"))
+        val nameResult = engine.executeCommand("idevicename")
 
         val combinedOutput = buildString {
             if (rootResult.isSuccess) append(rootResult.stdout).append("\n")
             if (batteryResult.isSuccess) append(batteryResult.stdout).append("\n")
-            if (diskResult.isSuccess) append(diskResult.stdout)
+            if (diskResult.isSuccess) append(diskResult.stdout).append("\n")
+            if (nameResult.isSuccess && nameResult.stdout.isNotBlank()) append("DeviceName: ").append(nameResult.stdout.trim()).append("\n")
         }
 
         if (combinedOutput.isNotBlank()) {
@@ -76,6 +78,11 @@ class DeviceRepository(context: Context) {
 
     suspend fun shutdownDevice(): Boolean = withContext(Dispatchers.IO) {
         val result = engine.executeCommand("idevicediagnostics", listOf("shutdown"))
+        result.isSuccess
+    }
+
+    suspend fun sleepDevice(): Boolean = withContext(Dispatchers.IO) {
+        val result = engine.executeCommand("idevicediagnostics", listOf("sleep"))
         result.isSuccess
     }
 

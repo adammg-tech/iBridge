@@ -38,7 +38,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -58,6 +57,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.adammg.ibridge.data.model.PhotoItem
+import com.adammg.ibridge.ui.components.WavyProgressIndicator
+import androidx.compose.ui.tooling.preview.Preview
 import java.io.File
 
 @Composable
@@ -116,7 +117,7 @@ fun PhotosScreen(
 
         if (isLoading) {
             Spacer(modifier = Modifier.height(8.dp))
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            WavyProgressIndicator(modifier = Modifier.fillMaxWidth())
         }
 
         statusMessage?.let { msg ->

@@ -1,0 +1,2 @@
+- `[x]` Update `AudioTrimScreen.kt` with 0.1s precision adjustment steps and strict <=30s duration validation on "Save Trim & Return"
+- `[x]` Perform build verification via `:app:assembleDebug`

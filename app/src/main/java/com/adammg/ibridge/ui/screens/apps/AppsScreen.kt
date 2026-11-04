@@ -19,16 +19,19 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -39,8 +42,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.adammg.ibridge.data.model.IosApp
+import com.adammg.ibridge.ui.components.WavyProgressIndicator
 
 @Composable
 fun AppsScreen(
@@ -52,6 +58,7 @@ fun AppsScreen(
     var showSystemApps by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var showSearch by remember { mutableStateOf(false) }
+    var appToDelete by remember { mutableStateOf<IosApp?>(null) }
 
     LaunchedEffect(showSystemApps) {
         viewModel.loadApps(showSystemApps)
@@ -63,6 +70,32 @@ fun AppsScreen(
             it.appName.contains(searchQuery, ignoreCase = true) ||
             it.bundleIdentifier.contains(searchQuery, ignoreCase = true)
         }
+    }
+
+    if (appToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { appToDelete = null },
+            title = { Text("Confirm Deletion") },
+            text = { Text("Are you sure you want to uninstall '${appToDelete?.appName}'? This action cannot be undone.") },
+            confirmButton = {
+                Button(
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    onClick = {
+                        appToDelete?.let { app ->
+                            viewModel.uninstallApp(app.bundleIdentifier, app.appName)
+                        }
+                        appToDelete = null
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.onError)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { appToDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 
     Column(
@@ -154,7 +187,8 @@ fun AppsScreen(
         }
 
         if (isLoading) {
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            Spacer(modifier = Modifier.height(8.dp))
+            WavyProgressIndicator(modifier = Modifier.fillMaxWidth())
         }
 
         statusMessage?.let { msg ->
@@ -228,7 +262,7 @@ fun AppsScreen(
                                 )
                             }
 
-                            IconButton(onClick = { viewModel.uninstallApp(app.bundleIdentifier) }) {
+                            IconButton(onClick = { appToDelete = app }) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
                                     contentDescription = "Uninstall",
@@ -240,5 +274,13 @@ fun AppsScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AppsScreenPreview() {
+    MaterialTheme {
+        AppsScreen()
     }
 }

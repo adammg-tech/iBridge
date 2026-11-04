@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeveloperBoard
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PowerSettingsNew
@@ -70,51 +71,59 @@ fun OverviewScreen(
 
     var showRenameDialog by remember { mutableStateOf(false) }
     var newDeviceName by remember(deviceInfo.deviceName) { mutableStateOf(deviceInfo.deviceName) }
+    var confirmAction by remember { mutableStateOf<String?>(null) } // "sleep", "reboot", "shutdown"
 
-    LaunchedEffect(Unit) {
-        viewModel.loadDeviceInfo()
-    }
-
-    LaunchedEffect(isPaired) {
-        if (isPaired) {
-            viewModel.loadDeviceInfo()
-        }
-    }
-
-    if (showRenameDialog) {
+    if (confirmAction != null) {
+        val action = confirmAction!!
         AlertDialog(
-            onDismissRequest = { showRenameDialog = false },
-            title = { Text("Rename iPhone") },
+            onDismissRequest = { confirmAction = null },
+            title = {
+                Text(
+                    text = when (action) {
+                        "sleep" -> "Put Device to Sleep"
+                        "reboot" -> "Restart Device"
+                        "shutdown" -> "Power Off Device"
+                        else -> "Confirm Action"
+                    }
+                )
+            },
             text = {
-                Column {
-                    Text(
-                        text = "Enter a new name for this iPhone:",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = newDeviceName,
-                        onValueChange = { newDeviceName = it },
-                        label = { Text("Device Name") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+                Text(
+                    text = when (action) {
+                        "sleep" -> "Are you sure you want to put the connected iPhone to sleep?"
+                        "reboot" -> "Are you sure you want to restart the connected iPhone?"
+                        "shutdown" -> "Are you sure you want to power off the connected iPhone?"
+                        else -> "Are you sure?"
+                    }
+                )
             },
             confirmButton = {
-                TextButton(
+                Button(
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (action == "shutdown") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                    ),
                     onClick = {
-                        if (newDeviceName.isNotBlank()) {
-                            viewModel.renameDevice(newDeviceName.trim())
+                        when (action) {
+                            "sleep" -> viewModel.sleepDevice()
+                            "reboot" -> viewModel.rebootDevice()
+                            "shutdown" -> viewModel.shutdownDevice()
                         }
-                        showRenameDialog = false
+                        confirmAction = null
                     }
                 ) {
-                    Text("Rename")
+                    Text(
+                        text = when (action) {
+                            "sleep" -> "Sleep"
+                            "reboot" -> "Restart"
+                            "shutdown" -> "Power Off"
+                            else -> "Confirm"
+                        },
+                        color = if (action == "shutdown") MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimary
+                    )
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showRenameDialog = false }) {
+                TextButton(onClick = { confirmAction = null }) {
                     Text("Cancel")
                 }
             }
@@ -321,25 +330,54 @@ fun OverviewScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     OutlinedButton(
-                        onClick = { viewModel.rebootDevice() },
-                        modifier = Modifier.weight(1f)
+                        onClick = { confirmAction = "sleep" },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp)
                     ) {
-                        Icon(imageVector = Icons.Default.RestartAlt, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Reboot")
+                        Icon(
+                            imageVector = Icons.Default.DarkMode,
+                            contentDescription = "Sleep",
+                            modifier = Modifier.size(28.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
 
-                    Button(
-                        onClick = { viewModel.shutdownDevice() },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                        modifier = Modifier.weight(1f)
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    OutlinedButton(
+                        onClick = { confirmAction = "reboot" },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp)
                     ) {
-                        Icon(imageVector = Icons.Default.PowerSettingsNew, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Power Off")
+                        Icon(
+                            imageVector = Icons.Default.RestartAlt,
+                            contentDescription = "Reboot",
+                            modifier = Modifier.size(28.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Button(
+                        onClick = { confirmAction = "shutdown" },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PowerSettingsNew,
+                            contentDescription = "Power Off",
+                            modifier = Modifier.size(28.dp),
+                            tint = MaterialTheme.colorScheme.onError
+                        )
                     }
                 }
             }
@@ -395,5 +433,13 @@ fun InfoRow(label: String, value: String) {
                 )
             }
         }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun OverviewScreenPreview() {
+    MaterialTheme {
+        OverviewScreen()
     }
 }
