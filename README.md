@@ -89,7 +89,7 @@ An Android application that connects to iPhone over USB to provide device inform
 Explore iBridge's interface, from connecting your iPhone to managing its information and files.
 | Connection Wizard | Home Screen | More Options |
 |:---:|:---:|:---:|
-| ![Connection Wizard](metadata/screenshots/1.png) | ![Home Screen](metadata/screenshots/2.png) | ![More Options](metadata/screenshots/3.png) |
+| <img src="metadata/screenshots/1.png" width="250"> | <img src="metadata/screenshots/2.png" width="250"> | <img src="metadata/screenshots/3.png" width="250"> |
 ---
 
 ## Download & Installation
