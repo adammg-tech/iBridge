@@ -1,99 +1,281 @@
-![iBridge Banner](Banner.png)
-
 # iBridge
 
-iBridge is an advanced Android application that enables direct USB connection, communication, file management, and diagnostics between Android devices and iOS devices (iPhones), operating entirely on-device without requiring a PC or root access.
+![iBridge Banner](banner.png)
+
+**Bridge Android and iPhone**
+
+An Android application that connects to iPhone over USB to provide device information, file access, backups, ringtone management, and more.
+
+[![Latest Release](https://img.shields.io/github/v/release/adammg-tech/iBridge?style=flat-square&label=Latest%20Release)](https://github.com/adammg-tech/iBridge/releases)
+[![License](https://img.shields.io/github/license/adammg-tech/iBridge?style=flat-square)](https://github.com/adammg-tech/iBridge/blob/master/LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/adammg-tech/iBridge?style=flat-square&label=Stars)](https://github.com/adammg-tech/iBridge)
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Download & Installation](#download--installation)
+- [Requirements](#requirements)
+- [How It Works](#how-it-works)
+- [Compatibility & Limitations](#compatibility--limitations)
+- [Built With](#built-with)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [License](#license)
+- [Acknowledgements](#acknowledgements)
 
 ---
 
 ## Features
 
-### 1. Device Connection and Management
-- **Direct USB iOS Connectivity**: Connect an iPhone directly to an Android phone or tablet via USB.
-- **USB Multiplexer Tunnel**: Establishes a background native usbmuxd communication daemon using Android USB Host API file descriptors.
-- **Device Dashboard (Overview)**: Real-time inspection of iOS device details including UDID, iOS version, model, serial number, battery level, storage capacity, and trust/pairing state.
+### USB Connection & Device Detection
 
-### 2. File and Application Management
-- **File Browser (AFC)**: Full file system access via Apple File Conduit (afcclient) to browse, upload, download, and manage files and application sandboxes on iOS.
-- **Application Manager**: List installed iOS applications, view package identifiers and versions, and manage app installation and removal.
-- **Photos and Media Explorer**: Browse, view, and export photos, videos, and media library assets from the connected iOS device.
+- Guided connection wizard with automatic iPhone detection.
+- USB access and device trust instructions.
+- Connection status and recent activity dashboard.
+- Pairing and session lifecycle management.
 
-### 3. Backup, Recovery, and Security
-- **Backup and Restore**: Create, manage, and restore full or incremental device backups directly onto Android storage using idevicebackup2.
-- **Device Recovery**: Put the connected iOS device into recovery mode, exit recovery, or reboot.
-- **Diagnostics and System Logs**: Stream real-time iOS system logs (idevicesyslog) and execute diagnostic queries.
-- **Lockdown and Security Management**: Inspect and manage pairing records, cryptographic certificates, and trust states (/var/lib/lockdown).
+### System Information
 
-### 4. Developer Tools
-- **Live Terminal Console**: Built-in interactive terminal and command runner executing native libimobiledevice binaries inside the Android application sandbox.
+- Detailed iPhone hardware and software specifications.
+- iOS version, build number, device model, and identifiers.
+- Battery status and storage usage.
+- Tap-to-copy device information.
+
+### File & Photo Access
+
+- Browse supported iPhone files over USB.
+- Access DCIM folders and browse photos.
+- Navigate supported device directories without unnecessary media scanning.
+
+### Ringtone Management
+
+- Import audio files and trim them using an interactive waveform editor.
+- Convert supported audio formats for ringtone use.
+- Browse, rename, export, and delete detected ringtones.
+- Automatic backups, SHA-256 verification, and rollback safeguards.
+
+> **Note:** Ringtone management is not guaranteed to work on modern iOS versions, especially iOS 17 and later.
+
+### Backup & Restore
+
+- Create and restore supported iPhone backups.
+- Manage backup operations through a dedicated interface.
+
+### Additional Tools
+
+- **Apps Manager** — Install, back up, and uninstall iOS apps.
+- **Logs & Crash Reports** — Access available system logs and crash reports.
+- **Diagnostics** — Inspect connection and application status.
+- **Developer Tools** — Additional utilities, including experimental features.
+
+### Modern Interface
+
+- Material 3 Expressive-inspired design.
+- Light, Dark, and System Default themes.
+- Dedicated Home dashboard and System Information screens.
+- Streamlined navigation and guided onboarding.
+
+### Session Management
+
+- Background process cleanup when the app is dismissed.
+- Pairing/trust session resets on app lifecycle events and USB disconnection.
+
+---
+## Screenshots
+
+Explore iBridge's interface, from connecting your iPhone to managing its information and files.
+| Connection Wizard | Home Screen | More Options |
+|:---:|:---:|:---:|
+| ![Connection Wizard](metadata/screenshots/1.png) | ![Home Screen](metadata/screenshots/2.png) | ![More Options](metadata/screenshots/3.png) |
+---
+
+## Download & Installation
+
+### Download
+
+Get the latest available version of iBridge from the official GitHub releases page.
+
+**[Download iBridge](https://github.com/adammg-tech/iBridge/releases)**
+
+### Installation
+
+1. Download the iBridge APK from the releases page.
+2. Open the downloaded APK on your Android device.
+3. Allow installation from your browser or file manager if Android requests permission.
+4. Complete the installation and launch iBridge.
+5. Connect your iPhone to your Android device using a compatible USB connection.
+6. Follow the in-app connection wizard and respond to any trust prompts on your iPhone.
+
+> Only install APKs from sources you trust. USB accessories, adapters, and cable compatibility may affect the connection.
+
+---
+
+## Requirements
+
+### Android Device
+
+- An Android device capable of running the installed iBridge APK.
+- USB host/OTG support and a compatible USB connection.
+- Sufficient storage for application data, exported files, and backups.
+- Permission to access the connected USB device when prompted.
+
+### iPhone
+
+- An iPhone with a compatible USB connection.
+- The ability to respond to the device trust prompt when required.
+- A supported iOS version for the particular feature being used.
+
+### Additional Considerations
+
+- A compatible USB cable or adapter may be required.
+- Certain features may require additional device permissions or services.
+- Feature availability can vary depending on the iPhone model, iOS version, and Apple security restrictions.
 
 ---
 
 ## How It Works
 
-iBridge bridges Android USB Host APIs and iOS device protocols entirely on-device:
+iBridge connects an Android device to an iPhone over USB, using the application's device communication framework and supported Apple device services.
 
-1. **USB File Descriptor Bridging**:
-   - Detects USB connection via Android UsbManager and requests permission.
-   - Opens a raw USB device connection and extracts the native file descriptor (fd).
-2. **Native usbmuxd Daemon**:
-   - Runs a compiled arm64-v8a native C usbmuxd daemon in a foreground service.
-   - Configures process environment variables (`TERMUX_USB_FD`, `LIBUSB_FD`) pointing to the Android USB file descriptor.
-3. **Bundled Binaries and Path Prefix Patching**:
-   - Bundles compiled arm64-v8a binaries (`usbmuxd`, `afcclient`, `idevice_id`, `ideviceinfo`, `idevicebackup2`, `ideviceinstaller`, `idevicesyslog`, `ideviceenterrecovery`, etc.) and shared libraries (`libimobiledevice`, `libusbmuxd`, `libplist`, `libusb`, `libssl`, `libcrypto`).
-   - Automatically prepares the working environment, patches binary path prefixes (rewriting `/data/data/com.termux/files/usr` to `/data/data/com.adammg.ibridge/f`), creates dynamic library aliases, and executes them via the system dynamic linker (`/system/bin/linker64`).
-4. **Reactive MVVM Architecture**:
-   - Built with Jetpack Compose (Material 3), Kotlin Coroutines, and StateFlow reactive repositories.
+### Connection Workflow
 
----
+1. **Connect** — Attach the iPhone to the Android device over USB.
+2. **Grant USB Access** — Allow iBridge to communicate with the connected device.
+3. **Establish Trust** — Follow the iPhone's trust instructions when prompted.
+4. **Initialize Services** — iBridge establishes the communication session and initializes the required services.
+5. **Use iBridge** — Access the supported features available for the connected device.
 
-## Project Structure
+### Under the Hood
 
-```
-com.adammg.ibridge/
-├── core/
-│   ├── binary/     # BinaryManager (extraction, patching, environment setup)
-│   ├── engine/     # IBridgeEngine (ProcessBuilder command runner & stream parser)
-│   ├── native/     # JNI & Native wrappers
-│   └── usb/        # UsbFdBridge & USB connection state machine
-├── data/
-│   ├── mapper/     # DTO / Info mappers (ideviceinfo parser)
-│   ├── model/      # Data models (DeviceInfo, AppInfo, BackupInfo, etc.)
-│   └── repository/ # Domain repositories (Device, File, App, Backup, Photo, Log, Recovery)
-├── service/
-│   └── UsbmuxdService # Foreground service managing the native usbmuxd daemon
-└── ui/
-    ├── components/ # LiveTerminalConsole, TopDeviceBanner, etc.
-    ├── screens/    # Overview, FileBrowser, Apps, Backup, Photos, Recovery, Security, DevTools, ToolsHub, Logs
-    └── theme/      # Material 3 Theme, Color, Type
-```
+- **USB Communication** — Provides the physical connection between Android and iPhone.
+- **usbmuxd** — Multiplexes supported communications with Apple mobile devices.
+- **libimobiledevice** — Provides access to supported Apple device protocols and services.
+- **AFC** — Supports file-related operations exposed through Apple's Apple File Conduit service.
+- **Device Services** — Enable supported functionality such as device information, backups, and diagnostics.
+
+The exact operations available depend on the services exposed by the connected iPhone and the implementation of each iBridge feature.
 
 ---
 
-## Tech Stack
+## Compatibility & Limitations
 
-- **UI Framework**: Jetpack Compose, Material 3, Edge-to-Edge
-- **Architecture**: MVVM, Kotlin Coroutines, StateFlow
-- **Native / Low-Level**: C, CMake, ProcessBuilder, Android USB Host API (`UsbManager`), `libimobiledevice`, `usbmuxd`, `libplist`, `libusb`, OpenSSL (`libssl`, `libcrypto`)
-- **Build System**: Android Gradle Plugin (AGP), Gradle Kotlin DSL (`build.gradle.kts`)
+iBridge relies on USB connectivity, Apple device services, and iOS-version-dependent behavior. Not every feature is guaranteed to work on every device.
+
+### General Limitations
+
+- USB access and device trust must be established successfully.
+- Apple security restrictions may limit access to certain files, settings, and services.
+- Some operations may behave differently across iPhone models and iOS versions.
+- Features requiring unsupported or restricted Apple services may be unavailable.
+
+### Ringtone Management
+
+**Custom ringtone management is not guaranteed to work on modern iOS versions, especially iOS 17 and later.**
+
+Changes to filesystem access, security restrictions, and ringtone handling may prevent some operations from working as expected.
+
+- Back up relevant files before modifying ringtone data.
+- Do not assume that successful USB connectivity guarantees ringtone compatibility.
+- Use ringtone modification and restoration features with caution.
+
+### Experimental Features
+
+The following features have not yet been tested and should be considered experimental:
+
+- **GPS & Developer Tools** — Including location spoofing.
+- **Recovery Mode & DFU** — Including recovery-mode management and IPSW firmware flashing.
+
+Do not rely on these features for critical operations until they have been tested and verified.
 
 ---
 
-## Compatibility and Stability
+## Built With
 
-- **Tested Hardware**: This project has been tested exclusively using a Samsung Galaxy A15 and an iPhone X. Compatibility with other device models, Android versions, or iOS versions is not guaranteed.
-- **Project Status**: iBridge is experimental, under active development, and may occasionally throw errors, fail to connect, or exhibit unstable behavior.
+iBridge combines Android application development with tools and protocols for communicating with Apple mobile devices.
+
+- **Android** — Application platform.
+- **Material Design 3** — Modern interface and theming.
+- **libimobiledevice** — Communication with supported Apple device services.
+- **usbmuxd** — USB device communication multiplexing.
+- **AFC** — Supported iPhone filesystem operations.
+- **Git & GitHub** — Version control and project hosting.
+
+*This list describes the principal technologies used by the project. Refer to the source code and dependency configuration for the exact libraries, versions, and implementation details.*
 
 ---
 
-## Acknowledgments
+## Roadmap
 
-This project was built and developed with the assistance of AI. 
+iBridge is actively evolving. Potential future improvements include:
+
+- [ ] Improve compatibility across additional iPhone models and iOS versions.
+- [ ] Expand ringtone management reliability and recovery safeguards.
+- [ ] Test and improve experimental GPS and developer tools.
+- [ ] Validate Recovery Mode, DFU, and firmware-related functionality.
+- [ ] Improve diagnostics and connection troubleshooting.
+- [ ] Refine the user interface and accessibility.
+- [ ] Expand documentation and developer onboarding.
+- [ ] Prepare additional distribution options.
+
+Roadmap items are goals, not promises or confirmation that a feature is currently implemented.
+
+---
+
+## Contributing
+
+Contributions, bug reports, and suggestions are welcome.
+
+### Reporting Issues
+
+When reporting a bug, please include:
+
+- Your Android device model and Android version.
+- Your iPhone model and iOS version.
+- The iBridge version you are using.
+- Steps to reproduce the issue.
+- Relevant application logs or error messages, with personal information removed.
+
+### Submitting Changes
+
+1. Fork the repository.
+2. Create a branch for your changes.
+3. Implement and test your changes.
+4. Submit a pull request describing what changed and how it was tested.
+
+Please avoid submitting untested changes that could risk user data or device functionality.
+
+For substantial changes, consider opening an issue first to discuss the proposed implementation.
 
 ---
 
 ## License
 
-**Copyright © 2026 Adam MG Alsherif.**
+iBridge is licensed under the **Apache License 2.0**.
 
-Licensed under the Apache License, Version 2.0. See the [LICENSE](LICENSE) file for details.
+You may use, modify, and redistribute the project in accordance with the license's terms and conditions.
+
+See the [`LICENSE`](LICENSE) file for the complete license text.
+
+Copyright © Adam MG Alsherif.
+
+---
+
+## Acknowledgements
+
+iBridge builds upon the work of the open-source community.
+
+- **[libimobiledevice](https://github.com/libimobiledevice/libimobiledevice)** — For tools and libraries that enable communication with Apple mobile devices.
+- **[usbmuxd](https://github.com/libimobiledevice/usbmuxd)** — For USB multiplexing support used in Apple device communication.
+- **[Android Open Source Project](https://source.android.com/)** — For the Android platform and its developer ecosystem.
+- **[Material Design](https://m3.material.io/)** — For design guidance and interface components.
+- **Contributors and testers** — For helping improve the project.
+- This project was built and developed with the assistance of AI. 
+---
+
+Please refer to the respective projects for their licenses, attribution requirements, and additional acknowledgements.
+
+---
+**iBridge — Bridge Android and iPhone.**
