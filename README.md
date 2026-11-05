@@ -1,12 +1,20 @@
 # iBridge
-
-[![Get it on Orion Store](https://raw.githubusercontent.com/RookieEnough/Orion-Store/refs/heads/main/assets/orion-badge.png)](https://rookieenough.github.io/Orion-Data/app/?id=ibridge)
-
 ![iBridge Banner](banner.png)
 
 **Bridge Android and iPhone**
 
 An Android application that connects to iPhone over USB to provide device information, file access, backups, ringtone management, and more.
+
+<p>
+  <a href="https://rookieenough.github.io/Orion-Data/app/?id=ibridge">
+    <img
+      src="https://raw.githubusercontent.com/RookieEnough/Orion-Store/refs/heads/main/assets/orion-badge.png"
+      alt="Get it on Orion Store"
+      width="20%"
+      height="auto"
+    >
+  </a>
+</p>
 
 [![Latest Release](https://img.shields.io/github/v/release/adammg-tech/iBridge?style=flat-square&label=Latest%20Release)](https://github.com/adammg-tech/iBridge/releases)
 [![License](https://img.shields.io/github/license/adammg-tech/iBridge?style=flat-square)](https://github.com/adammg-tech/iBridge/blob/master/LICENSE)
