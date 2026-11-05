@@ -10,8 +10,8 @@ An Android application that connects to iPhone over USB to provide device inform
     <img
       src="https://raw.githubusercontent.com/RookieEnough/Orion-Store/refs/heads/main/assets/orion-badge.png"
       alt="Get it on Orion Store"
-      width="20%"
-      height="auto"
+      width="auto"
+      height="40px"
     >
   </a>
 </p>
