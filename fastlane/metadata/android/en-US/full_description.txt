@@ -1,0 +1,76 @@
+<h1>iBridge — Bridge Android and iPhone</h1>
+<p><strong>iBridge</strong> is an open-source Android application designed to connect Android devices with iPhones through a USB connection.</p>
+<p>The project brings iPhone management capabilities directly to Android, allowing users to interact with their connected iPhone without needing a computer.</p>
+<h2>Features</h2>
+<h3>USB Connection &amp; Pairing</h3>
+<ul>
+<li>Connect an iPhone to an Android device using USB OTG.</li>
+<li>Detect connected iPhone devices.</li>
+<li>Manage Android USB permissions.</li>
+<li>Establish and manage iPhone pairing sessions.</li>
+<li>Automatically handle connection and disconnection events.</li>
+</ul>
+<h3>File Management</h3>
+<ul>
+<li>Browse the iPhone file system through an AFC file explorer.</li>
+<li>Navigate directories and folders.</li>
+<li>Upload files from Android to the iPhone.</li>
+<li>Download files from the iPhone to Android.</li>
+<li>Delete supported files.</li>
+</ul>
+<h3>Photo Access</h3>
+<ul>
+<li>Browse accessible iPhone photos.</li>
+<li>Navigate photo directories.</li>
+<li>Preserve the original DCIM folder structure.</li>
+</ul>
+<h3>Ringtone Management</h3>
+<ul>
+<li>Import supported audio files from Android.</li>
+<li>Convert compatible audio into the iPhone ringtone format.</li>
+<li>Preview audio using an interactive waveform.</li>
+<li>Trim audio with draggable editing handles and precise playback positioning.</li>
+<li>Manage ringtone files.</li>
+<li>Back up ringtone data and verify backup integrity.</li>
+<li>Attempt to restore backed-up ringtone data using the available recovery mechanisms.</li>
+</ul>
+<h3>System Information</h3>
+<ul>
+<li>Identify the connected iPhone model.</li>
+<li>View the installed iOS version.</li>
+<li>Display the device name.</li>
+<li>View battery capacity.</li>
+<li>Check available storage and formatted storage usage.</li>
+<li>Copy displayed information with a tap.</li>
+<li>Refresh device information.</li>
+</ul>
+<h3>Logs &amp; Diagnostics</h3>
+<ul>
+<li>Stream live system logs.</li>
+<li>Retrieve available crash reports.</li>
+<li>Access the built-in terminal console for advanced diagnostics.</li>
+</ul>
+<h3>User Experience</h3>
+<ul>
+<li>Material 3 Expressive interface.</li>
+<li>Light, Dark, and System themes.</li>
+<li>Guided onboarding experience.</li>
+<li>Connection activity logging.</li>
+<li>Dynamic iOS version and device presentation.</li>
+</ul>
+<h2>Requirements</h2>
+<ul>
+<li>Android 8.0 (Oreo) or newer.</li>
+<li>An iPhone.</li>
+<li>A compatible USB cable.</li>
+<li>USB OTG host support on the Android device.</li>
+<li>USB permission granted when requested.</li>
+<li>iPhone confirmation may be required to establish a trusted connection.</li>
+</ul>
+<h2>Privacy</h2>
+<p>iBridge is designed around direct USB communication between Android and iPhone. The app contains no advertising, analytics, or tracking SDKs. Connection logs and diagnostic data are stored locally.</p>
+<h2>Open Source</h2>
+<p>iBridge is free and open-source software licensed under the Apache License 2.0.</p>
+<p>You can explore the source code, report issues, contribute, and follow development on GitHub:</p>
+<p><a href="https://github.com/adammg-tech/iBridge">https://github.com/adammg-tech/iBridge</a></p>
+<p><strong>iBridge — Bridge Android and iPhone.</strong></p>

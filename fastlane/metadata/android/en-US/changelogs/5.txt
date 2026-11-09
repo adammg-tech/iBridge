@@ -1,0 +1,25 @@
+iBridge v3.0
+
+**Major redesign**
+- Introduced a redesigned Material 3 Expressive interface.
+- Added Light, Dark, and System theme options.
+- Added a four-stage guided USB connection wizard.
+- Improved the home dashboard and navigation.
+
+**Ringtone management**
+- Added custom iPhone ringtone importing from MP3, WAV, M4A, and AAC.
+- Added audio conversion and waveform-based trimming.
+- Added ringtone browsing, renaming, exporting, and deletion.
+- Added ringtone backup, SHA-256 integrity verification, and recovery.
+
+**Device information**
+- Added a dedicated system information dashboard.
+- Added iPhone model identification and iOS version information.
+- Added battery, storage, and hardware information.
+- Added tap-to-copy device specifications.
+
+**Additional improvements**
+- Improved USB connection lifecycle management.
+- Added stricter pairing and trust session handling.
+- Improved device detection and connection instructions.
+- Refined application navigation and settings.
