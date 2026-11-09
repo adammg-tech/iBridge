@@ -44,8 +44,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-import com.adammg.ibridge.ui.components.LiveTerminalConsole
-
 @Composable
 fun LogsScreen(
     viewModel: LogsViewModel = viewModel()
@@ -84,7 +82,7 @@ fun LogsScreen(
             SegmentedButton(
                 selected = selectedTab == 0,
                 onClick = { selectedTab = 0 },
-                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3)
+                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
             ) {
                 Text(
                     text = "Live Syslog",
@@ -97,23 +95,10 @@ fun LogsScreen(
             SegmentedButton(
                 selected = selectedTab == 1,
                 onClick = { selectedTab = 1 },
-                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3)
+                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
             ) {
                 Text(
                     text = "Crash Reports",
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            SegmentedButton(
-                selected = selectedTab == 2,
-                onClick = { selectedTab = 2 },
-                shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3)
-            ) {
-                Text(
-                    text = "Termux Log",
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Ellipsis,
@@ -249,9 +234,6 @@ fun LogsScreen(
                         }
                     }
                 }
-            }
-            2 -> {
-                LiveTerminalConsole(modifier = Modifier.fillMaxSize())
             }
         }
     }

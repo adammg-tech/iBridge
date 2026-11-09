@@ -24,7 +24,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Backup
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Code
@@ -37,7 +36,6 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Usb
 import androidx.compose.material3.Button
@@ -67,15 +65,13 @@ import androidx.compose.ui.unit.dp
 import com.adammg.ibridge.data.model.DeviceInfo
 import com.adammg.ibridge.ui.screens.apps.AppsScreen
 import com.adammg.ibridge.ui.screens.backup.BackupScreen
-import com.adammg.ibridge.ui.screens.devtools.DevToolsScreen
 import com.adammg.ibridge.ui.screens.files.FileBrowserScreen
 import com.adammg.ibridge.ui.screens.logs.LogsScreen
-import com.adammg.ibridge.ui.screens.recovery.RecoveryScreen
 import com.adammg.ibridge.ui.screens.ringtones.RingtoneHubScreen
 
 enum class MoreSubScreen {
     MAIN, DIAGNOSTICS, SETTINGS, HELP, ABOUT, RINGTONE,
-    APPS, BACKUP, FILES, LOGS, DEV, RECOVERY
+    APPS, BACKUP, FILES, LOGS
 }
 
 @Composable
@@ -88,6 +84,10 @@ fun MoreScreen(
     initialSubScreen: MoreSubScreen = MoreSubScreen.MAIN
 ) {
     var currentSubScreen by remember { mutableStateOf(initialSubScreen) }
+
+    androidx.activity.compose.BackHandler(enabled = currentSubScreen != MoreSubScreen.MAIN) {
+        currentSubScreen = MoreSubScreen.MAIN
+    }
 
     AnimatedContent(targetState = currentSubScreen, label = "moreSubScreen") { subScreen ->
         when (subScreen) {
@@ -118,8 +118,6 @@ fun MoreScreen(
             MoreSubScreen.BACKUP -> ToolSubPage("Backup & Restore", onBack = { currentSubScreen = MoreSubScreen.MAIN }) { BackupScreen() }
             MoreSubScreen.FILES -> ToolSubPage("AFC File Explorer", onBack = { currentSubScreen = MoreSubScreen.MAIN }) { FileBrowserScreen() }
             MoreSubScreen.LOGS -> ToolSubPage("Logs & Crash Reports", onBack = { currentSubScreen = MoreSubScreen.MAIN }) { LogsScreen() }
-            MoreSubScreen.DEV -> ToolSubPage("GPS & Dev Tools", onBack = { currentSubScreen = MoreSubScreen.MAIN }) { DevToolsScreen() }
-            MoreSubScreen.RECOVERY -> ToolSubPage("Recovery Mode & DFU", onBack = { currentSubScreen = MoreSubScreen.MAIN }) { RecoveryScreen() }
         }
     }
 }
@@ -225,24 +223,6 @@ private fun MoreMainView(
                 iconBgColor = Color(0xFFDCFCE7),
                 iconTint = Color(0xFF16A34A),
                 onClick = { onNavigate(MoreSubScreen.LOGS) }
-            )
-
-            MoreOptionCard(
-                title = "GPS & Dev Tools",
-                subtitle = "Location spoofer & developer tools",
-                icon = Icons.Default.Build,
-                iconBgColor = Color(0xFFFEF08A),
-                iconTint = Color(0xFFCA8A04),
-                onClick = { onNavigate(MoreSubScreen.DEV) }
-            )
-
-            MoreOptionCard(
-                title = "Recovery Mode & DFU",
-                subtitle = "Recovery mode & firmware utilities",
-                icon = Icons.Default.SystemUpdate,
-                iconBgColor = Color(0xFFFEE2E2),
-                iconTint = Color(0xFFDC2626),
-                onClick = { onNavigate(MoreSubScreen.RECOVERY) }
             )
 
             MoreOptionCard(
@@ -543,7 +523,7 @@ private fun AboutIBridgeView(onBack: () -> Unit) {
                     modifier = Modifier.padding(vertical = 8.dp)
                 ) {
                     Text(
-                        text = "Version 3.0",
+                        text = "Version 3.1",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -569,7 +549,7 @@ private fun AboutIBridgeView(onBack: () -> Unit) {
             iconBgColor = Color(0xFFF3F4F6),
             iconTint = Color(0xFF1F2937),
             onClick = {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/adammg-tech/iBridge"))
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com"))
                 context.startActivity(intent)
             }
         )
@@ -580,10 +560,7 @@ private fun AboutIBridgeView(onBack: () -> Unit) {
             icon = Icons.Default.Info,
             iconBgColor = Color(0xFFF3F4F6),
             iconTint = Color(0xFF1F2937),
-            onClick = {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/adammg-tech/iBridge?tab=Apache-2.0-1-ov-file"))
-                context.startActivity(intent)
-            }
+            onClick = {}
         )
 
         MoreOptionCard(
@@ -592,10 +569,7 @@ private fun AboutIBridgeView(onBack: () -> Unit) {
             icon = Icons.Default.Person,
             iconBgColor = Color(0xFFF3F4F6),
             iconTint = Color(0xFF1F2937),
-            onClick = {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/libimobiledevice/"))
-                context.startActivity(intent)
-            }
+            onClick = {}
         )
     }
 }

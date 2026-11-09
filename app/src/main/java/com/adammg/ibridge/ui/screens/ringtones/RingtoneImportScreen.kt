@@ -198,6 +198,10 @@ fun RingtoneImportScreen(
     var showTrimScreen by remember { mutableStateOf(false) }
     var showRestoreDialog by remember { mutableStateOf(false) }
 
+    androidx.activity.compose.BackHandler(enabled = showTrimScreen) {
+        showTrimScreen = false
+    }
+
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->

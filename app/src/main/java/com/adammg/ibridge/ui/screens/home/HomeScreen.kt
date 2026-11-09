@@ -75,6 +75,10 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     var showSystemInfoScreen by remember { mutableStateOf(false) }
+
+    androidx.activity.compose.BackHandler(enabled = showSystemInfoScreen) {
+        showSystemInfoScreen = false
+    }
     var showRenameDialog by remember { mutableStateOf(false) }
     var newDeviceName by remember { mutableStateOf(deviceInfo.deviceName) }
 
