@@ -87,19 +87,13 @@ An Android application that connects to iPhone over USB to provide device inform
 - Light, Dark, and System Default themes.
 - Dedicated Home dashboard and System Information screens.
 - Streamlined navigation and guided onboarding.
-
-### Session Management
-
-- Background process cleanup when the app is dismissed.
-- Pairing/trust session resets on app lifecycle events and USB disconnection.
-
 ---
 ## Screenshots
 
 Explore iBridge's interface, from connecting your iPhone to managing its information and files.
 | Connection Wizard | Home Screen | More Options |
 |:---:|:---:|:---:|
-| <img src="metadata/screenshots/1.png" width="250"> | <img src="metadata/screenshots/2.png" width="250"> | <img src="metadata/screenshots/3.png" width="250"> |
+| <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" width="250"> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" width="250"> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.png" width="250"> |
 ---
 
 ## Download & Installation
