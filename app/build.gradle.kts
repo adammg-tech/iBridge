@@ -34,16 +34,27 @@ android {
         }
     }
 
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a")
+            isUniversalApk = true
+        }
+    }
+
     buildTypes {
         release {
             val storeFileProp = project.findProperty("MYAPP_RELEASE_STORE_FILE") as String?
             if (!storeFileProp.isNullOrBlank()) {
                 signingConfig = signingConfigs.getByName("release")
             }
-            optimization {
-                enable = false
-                packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
-            }
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "src/main/keepRules/rules.keep"
+            )
         }
     }
     compileOptions {
@@ -62,6 +73,22 @@ android {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
             version = "3.22.1"
+        }
+    }
+}
+
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            val outputFileName = output.outputFileName.get()
+            val baseCode = 6
+            if (outputFileName.contains("arm64-v8a")) {
+                output.versionCode.set(baseCode * 10 + 2)
+            } else if (outputFileName.contains("armeabi-v7a")) {
+                output.versionCode.set(baseCode * 10 + 1)
+            } else if (outputFileName.contains("universal")) {
+                output.versionCode.set(baseCode)
+            }
         }
     }
 }

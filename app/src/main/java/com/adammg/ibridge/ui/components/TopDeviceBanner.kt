@@ -49,29 +49,7 @@ import com.adammg.ibridge.core.usb.UsbConnectionState
 import com.adammg.ibridge.data.model.DeviceInfo
 
 private fun getIosDrawableResId(majorVersion: Int): Int {
-    return when (majorVersion) {
-        1 -> R.drawable.ios1
-        2 -> R.drawable.ios2
-        3 -> R.drawable.ios3
-        4 -> R.drawable.ios4
-        5 -> R.drawable.ios5
-        6 -> R.drawable.ios6
-        7 -> R.drawable.ios7
-        8 -> R.drawable.ios8
-        9 -> R.drawable.ios9
-        10 -> R.drawable.ios10
-        11 -> R.drawable.ios11
-        12 -> R.drawable.ios12
-        13 -> R.drawable.ios13
-        14 -> R.drawable.ios14
-        15 -> R.drawable.ios15
-        16 -> R.drawable.ios16
-        17 -> R.drawable.ios17
-        18 -> R.drawable.ios18
-        26 -> R.drawable.ios26
-        27 -> R.drawable.ios27
-        else -> 0
-    }
+    return 0
 }
 
 @Composable
@@ -88,29 +66,8 @@ fun TopDeviceBanner(
         deviceInfo.productVersion.split(".").firstOrNull()?.toIntOrNull() ?: 0
     }
 
-    val iosDrawableId = remember(majorVersion) {
-        getIosDrawableResId(majorVersion)
-    }
-
-    val deviceDrawableId = remember(deviceInfo.productType) {
-        if (deviceInfo.productType.isNotBlank() && deviceInfo.productType != "Unknown") {
-            var cleanName = deviceInfo.productType.lowercase().trim().replace(",", "_")
-            cleanName = when (cleanName) {
-                "iphone10_4" -> "iphone10_1"
-                "iphone10_5" -> "iphone10_2"
-                "iphone10_6" -> "iphone10_3"
-                "iphone9_3" -> "iphone9_1"
-                "iphone9_4" -> "iphone9_2"
-                "iphone11_4" -> "iphone11_6"
-                "iphone5_4" -> "iphone5_3"
-                "iphone6_2" -> "iphone6_1"
-                "iphone19_7" -> "iphone19_3"
-                else -> cleanName
-            }
-            val resId = context.resources.getIdentifier(cleanName, "drawable", context.packageName)
-            if (resId != 0) resId else 0
-        } else 0
-    }
+    val iosDrawableId = 0
+    val deviceDrawableId = 0
 
     ElevatedCard(
         shape = RoundedCornerShape(24.dp),

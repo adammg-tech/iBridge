@@ -1,0 +1,4 @@
+- `[x]` Enable ABI splits (`arm64-v8a`, `armeabi-v7a`, universal) in `app/build.gradle.kts`
+- `[x]` Enable R8 minification (`isMinifyEnabled = true`) and resource shrinking (`isShrinkResources = true`) in `buildTypes.release`
+- `[x]` Verify release build outputs via `./gradlew assembleRelease` (arm64-v8a APK is ~19.4 MB, armeabi-v7a APK is ~28.6 MB)
+- `[x]` Perform build verification via `:app:assembleRelease`

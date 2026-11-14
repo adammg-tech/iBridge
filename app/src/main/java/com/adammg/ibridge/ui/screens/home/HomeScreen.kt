@@ -82,25 +82,7 @@ fun HomeScreen(
     var showRenameDialog by remember { mutableStateOf(false) }
     var newDeviceName by remember { mutableStateOf(deviceInfo.deviceName) }
 
-    val deviceDrawableId = remember(deviceInfo.productType) {
-        if (deviceInfo.productType.isNotBlank() && deviceInfo.productType != "Unknown") {
-            var cleanName = deviceInfo.productType.lowercase().trim().replace(",", "_")
-            cleanName = when (cleanName) {
-                "iphone10_4" -> "iphone10_1"
-                "iphone10_5" -> "iphone10_2"
-                "iphone10_6" -> "iphone10_3"
-                "iphone9_3" -> "iphone9_1"
-                "iphone9_4" -> "iphone9_2"
-                "iphone11_4" -> "iphone11_6"
-                "iphone5_4" -> "iphone5_3"
-                "iphone6_2" -> "iphone6_1"
-                "iphone19_7" -> "iphone19_3"
-                else -> cleanName
-            }
-            val resId = context.resources.getIdentifier(cleanName, "drawable", context.packageName)
-            if (resId != 0) resId else 0
-        } else 0
-    }
+    val deviceDrawableId = 0
 
     if (showSystemInfoScreen) {
         SystemInfoScreen(

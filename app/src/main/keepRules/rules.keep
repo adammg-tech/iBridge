@@ -11,3 +11,14 @@
 # Keep Data Models and Repositories
 -keep class com.adammg.ibridge.data.** { *; }
 -keep class com.adammg.ibridge.core.** { *; }
+
+# WorkManager R8 Keep Rules
+-keep class androidx.work.impl.WorkDatabase_Impl { *; }
+-keep class androidx.work.WorkManagerInitializer { *; }
+-keep class androidx.work.impl.background.systemjob.SystemJobService { *; }
+-dontwarn androidx.work.impl.**
+-keepattributes *Annotation*,Signature,EnclosingMethod
+
+# FFmpeg-Kit R8 Keep Rules
+-keep class com.antonkarpenko.ffmpegkit.** { *; }
+-dontwarn com.antonkarpenko.ffmpegkit.**
