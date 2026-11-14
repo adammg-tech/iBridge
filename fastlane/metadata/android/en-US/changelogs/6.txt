@@ -1,0 +1,21 @@
+iBridge v3.1
+
+What's New
+
+1. Simplified Logs Layout
+Redesigned the logs section with a streamlined two-tab layout.
+Live Syslog – Monitor live system log messages.
+Crash Reports – Access available crash reports.
+Removed unnecessary tabs to make log navigation simpler and more focused.
+
+2. Improved Android Back Navigation
+Integrated Jetpack Compose BackHandler across app sub-screens.
+Improved handling of Android's back action when navigating between screens.
+Made returning to previous screens more consistent and predictable.
+Overall Improvements
+Cleaner interface in the Logs section.
+More intuitive screen navigation.
+Improved consistency across the app's Compose-based screens.
+Update to iBridge v3.1 for a smoother experience!
+
+iBridge — Bridge Android and iPhone.
