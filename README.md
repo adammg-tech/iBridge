@@ -1,5 +1,5 @@
 # iBridge
-![iBridge Banner](banner.png)
+![iBridge Banner](feature_screen.png)
 
 **Bridge Android and iPhone**
 
